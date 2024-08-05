@@ -1,0 +1,29 @@
+# The URL the site will be built for
+base_url = "https://jsspen.github.io"
+title = "Jordan Spencer | Software Dev"
+
+# Whether to automatically compile all Sass files in the sass directory
+compile_sass = true
+
+# Whether to build a search index to be used later on by a JavaScript library
+build_search_index = false
+
+# Theme in use
+theme = "zola-sam"
+
+[markdown]
+# Whether to do syntax highlighting
+# Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+highlight_code = true
+
+[extra]
+sam_menu = [
+    { text = "projects", link = "/projects" },
+    { text = "about", link = "/about" },
+    { text = "cv", link = "/cv" },
+]
+home = "home"
+sam_bottom_menu = true
+
+# [extra.sam_footer]
+# text = "<a href=\"/about\">about</a>"
