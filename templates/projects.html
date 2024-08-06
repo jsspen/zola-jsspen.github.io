@@ -2,14 +2,18 @@
 htmltitle %} {% endblock htmltitle %} {% block body %}
 <div class="wrap">
   <div class="section" id="title">{% block title %}{% endblock title %}</div>
-  <div class="section" id="sections">
-    <a href="/projects/js-katas" class="section-list">js katas</a><br />
-    <a href="/projects/a-homelab">a homelab</a><br />
-    <a href="/projects/this-website/">this website</a><br />
-    <a href="/projects/python-scripts">python scripts</a><br />
-    <a href="/projects/internet-of-things">internet of things</a><br />
-    <a href="/projects/foss-ifying-a-phone/">fossifying a phone</a><br />
-    <a href="/projects/what-is-there-to-eat/">what is there to eat?</a><br />
+  <div class="section-alt" id="sections">
+    <a href="/projects/js-katas" class="float">js katas</a><br />
+    <a href="/projects/a-homelab" class="float">a homelab</a><br />
+    <a href="/projects/this-website/" class="float">this website</a><br />
+    <a href="/projects/python-scripts" class="float">python scripts</a><br />
+    <a href="/projects/internet-of-things" class="float">internet of things</a
+    ><br />
+    <a href="/projects/foss-ifying-a-phone/" class="float">fossifying a phone</a
+    ><br />
+    <a href="/projects/what-is-there-to-eat/" class="float"
+      >what is there to eat?</a
+    ><br />
   </div>
   <div class="section" id="content">
     {% block content %}{% endblock content %}

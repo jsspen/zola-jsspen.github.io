@@ -1,0 +1,10 @@
+{% extends "base.html" %} {% import "macros.html" as macros %}
+{% block htmltitle %}
+    {{ page.title }} - {{ config.title }}
+{% endblock htmltitle %}
+{% block content %}
+    {% if not page.extra.no_header %}
+        {% if page.date %}{{ macros::format_date(date=page.date) }}{% endif %}
+    {% endif %}
+    {{ page.content | safe }}
+{% endblock content %}

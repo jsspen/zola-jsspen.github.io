@@ -1,19 +1,22 @@
 {% extends "index.html" %} {% import "macros.html" as macros %} {% block
-htmltitle %} {% endblock htmltitle %} {% block body %}
+htmltitle %} {% endblock htmltitle %} {% block body %} {% block content %}
 <div class="wrap">
   <img src="/headshot.jpg" class="float" alt="Headshot" />
+  <h1 class="justify-text">Jordan Spencer</h1>
   <p class="justify-text">
     In the Spring of 2020 I was working in the curatorial office of a beloved
     art museum and by the end of the year I was gearing up to embark on a new
     journey as a junior developer at a fast-growing startup. The onset of a
     global pandemic presented me with an unexpected opportunity to pivot,
-    leading me to plunge headfirst into the realm of programming. I enrolled in
-    a rigorous full stack coding bootcamp and graduated with my first job offers
-    already in hand. Since then, I’ve accumulated substantial on-the-job
-    experience in both frontend and backend development, with a primary focus on
-    JavaScript frameworks, APIs, and cloud services. These skills have been
-    complemented by the foundational knowledge I acquired during my bootcamp
-    training.
+    leading me to plunge headfirst into the realm of programming.
+  </p>
+  <p class="justify-text">
+    I enrolled in a rigorous full stack coding bootcamp and graduated with my
+    first job offers already in hand. Since then, I’ve accumulated substantial
+    on-the-job experience in both frontend and backend development, with a
+    primary focus on JavaScript frameworks, APIs, and cloud services. These
+    skills have been complemented by the foundational knowledge I acquired
+    during my bootcamp training.
   </p>
   <p class="justify-text">
     My diverse professional background spans project management, library and
@@ -27,7 +30,7 @@ htmltitle %} {% endblock htmltitle %} {% block body %}
   </p>
   <p>
     I love hearing about new opportunities, don't hesitate to
-    <a href="mailto:Jordan.S.Spencer@gmail.com">reach out</a>.<br />
+    <a href="mailto:Jordan.S.Spencer@gmail.com">reach out</a>.<br /><br />
     Find me on <a href="https://github.com/jsspen/">Github</a>,
     <a href="https://www.linkedin.com/in/jordanspencercbus/">LinkedIn</a>, and
     <a href="https://dev.to/jsspen">DEV</a>.<br />
@@ -36,4 +39,4 @@ htmltitle %} {% endblock htmltitle %} {% block body %}
 
   {{ macros::bottom_menu() }} {{ macros::footer() }}
 </div>
-{% endblock body %}
+{% endblock body %}{% endblock content %}

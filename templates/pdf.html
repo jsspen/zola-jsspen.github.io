@@ -1,22 +1,19 @@
-{% extends "index.html" %} {% import "macros.html" as macros %} {% block
-htmltitle %} {{ page.title }} - {{ config.title }} {% endblock htmltitle %} {%
-block body %}
-<div class="wrap">
-  <div class="pdf-container" id="content">
-    {% block content %}
-    <object
-      data="/resume.pdf"
-      type="application/pdf"
-      width="100%"
-      height="800px"
-    >
-      <p>
-        The proper plugin to display this PDF has not been found.
-        <a href="/resume.pdf">Click here to download my resume.</a>
-      </p>
-    </object>
-    {% endblock content %}
+{% extends "index.html" %} {% import "macros.html" as macros %}
+{% block htmltitle %}
+  {{ page.title }} - {{ config.title }}
+{% endblock htmltitle %}
+{% block body %}
+  <div class="wrap">
+    <div class="pdf-container" id="content">
+      {% block content %}
+        <object data="/resume.pdf" type="application/pdf" width="100%" height="800px">
+          <p>
+            The proper plugin to display this PDF has not been found.
+            <a href="/resume.pdf">Click here to download my resume.</a>
+          </p>
+        </object>
+      {% endblock content %}
+    </div>
+    {{ macros::bottom_menu() }} {{ macros::footer() }}
   </div>
-  {{ macros::bottom_menu() }} {{ macros::footer() }}
-</div>
 {% endblock body %}
