@@ -1,23 +1,29 @@
-{% extends "index.html" %} {% import "macros.html" as macros %} {% block
-htmltitle %} {% endblock htmltitle %} {% block body %}
-<div class="wrap">
-  <div class="section" id="title">{% block title %}{% endblock title %}</div>
-  <div class="section-alt" id="sections">
-    <a href="/projects/js-katas" class="float">js katas</a><br />
-    <a href="/projects/a-homelab" class="float">a homelab</a><br />
-    <a href="/projects/this-website/" class="float">this website</a><br />
-    <a href="/projects/python-scripts" class="float">python scripts</a><br />
-    <a href="/projects/internet-of-things" class="float">internet of things</a
-    ><br />
-    <a href="/projects/foss-ifying-a-phone/" class="float">fossifying a phone</a
-    ><br />
-    <a href="/projects/what-is-there-to-eat/" class="float"
-      >what is there to eat?</a
-    ><br />
+{% extends "index.html" %} {% import "macros.html" as macros %}
+{% block
+  htmltitle %}
+{% endblock htmltitle %}
+{% block body %}
+  <div class="wrap">
+    <div class="section" id="title">
+      {% block title %}
+      {% endblock title %}
+    </div>
+    <div class="section-alt" id="sections">
+      <a href="/projects/js-katas" class="float">js katas</a>
+      <br />
+      <a href="/projects/my-homelab" class="float">my homelab</a>
+      <br />
+      <a href="/projects/this-website/" class="float">this website</a>
+      <br />
+      <a href="/projects/python-projects" class="float">python projects</a>
+      <br />
+      <a href="/projects/foss-ifying-a-phone/" class="float">foss-ifying a phone</a>
+      <br />
+    </div>
+    <div class="section" id="content">
+      {% block content %}
+      {% endblock content %}
+    </div>
+    {{ macros::bottom_menu() }} {{ macros::footer() }}
   </div>
-  <div class="section" id="content">
-    {% block content %}{% endblock content %}
-  </div>
-  {{ macros::bottom_menu() }} {{ macros::footer() }}
-</div>
 {% endblock body %}
