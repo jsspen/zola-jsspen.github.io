@@ -1,5 +1,6 @@
 +++
 title = "Local Notifications"
+weight = 40
 +++
 
 ## Local Notifications
@@ -30,3 +31,5 @@ attachment-expiry-duration: "24h"
 I save my config, reboot the LXC, and head to the new address in my browser. No more error message! I open the app on my phone and subscribe to a new topic, which is as simple as making one up! I enter `test` and check the box for "use another server" (the default is the public ntfy server) and I enter mine. Back in my browser I click "publish notification," enter `test` as the topic name, and enter a little bit of nonsense in the title and message fields. A click on send and _ding_ there it is on my phone. Simple!
 
 I did notice that the app was telling me that it would be better if I connected via websocket. I tapped "enable" and my `test` subscription fell into the pit of endless "reconnecting..." so I was definitely going to have to do a little more than just click enable! Turns out, not much more: NPM has a toggle switch for "Websockets Support" when configuring a proxy host. Now I was back in business - though with a new note jotted down: learn about websockets.
+
+<a href="/projects/a-homelab/"><b>Back to Homelab Project Page</b></a>

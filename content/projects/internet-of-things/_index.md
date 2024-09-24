@@ -1,3 +1,0 @@
-+++
-title = "internet of things"
-+++

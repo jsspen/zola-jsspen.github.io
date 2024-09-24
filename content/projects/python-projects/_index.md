@@ -1,4 +1,4 @@
 +++
 title = "python projects"
-description = "learning python and documenting the things I make along the way"
+description = "learning python and documenting the things i make along the way"
 +++
