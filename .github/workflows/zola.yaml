@@ -12,5 +12,3 @@ jobs:
         env:
           PAGES_BRANCH: gh-pages
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: preserve_cname
-        run: echo 'jordan-spencer.com' > public/CNAME
