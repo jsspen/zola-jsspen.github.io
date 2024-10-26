@@ -1,15 +1,14 @@
 +++
 title = "issu grabber"
-description = "A quick Python script to save a PDF copy of any ISSUU document"
+description = "A quick Python script to scrape, build, and save a PDF copy of document hosted by ISSUU"
 +++
 
 # ISSUU Grabber
 
+[Github Repo](https://github.com/jsspen/issuu-grabber)
+
 A quick Python script to save a PDF copy of any document hosted by ISSUU
 
-## GitHub Repo
-
-[ISSU Grabber](https://github.com/jsspen/issuu-grabber)
 
 ## Basic usage
 
