@@ -4,24 +4,18 @@ description = "a simple, interactive program that converts album lists to spotif
 +++
 
 # LISTener's Friend
+[Github Repo](https://github.com/jsspen/listeners-friend)
 
 A simple, interactive program that converts album lists to Spotify playlists
 
 _**Why?**_ When exploring new music I've always preferred listening to albums rather than "top" tracks or algorithmically generated playlists. The problem is that building playlists manually, say from a list like [this](https://rateyourmusic.com/list/funks/the_wires_100_most_important_records_ever_made/), takes a lot of copy-paste-searching and click-n-dragging, so I built this to make the process faster and easier.
 
-## GitHub Repo
-
-[LISTener's Friend](https://github.com/jsspen/listeners-friend)
-
 - [Getting Started](#getting-started)
 - [How It Works](#how-it-works)
-- [Basics](#basics)
-- [Authorization](#authorization)
-- [Standard Text Input](#standard-text-input)
-    - [Option 1: Use txt file](#option-1-use-txt-file)
-- [Scraped Web Data Input](#scraped-web-data-input)
-    - [Option 2: Use RateYourMusic List URL](#option-2-use-rateyourmusic-list-url)
-    - [Option 3: Use Current Boomkat Bestseller List](#option-3-use-current-boomkat-bestseller-list)
+   - [Basics](#basics)
+   - [Authorization](#authorization)
+   - [Standard Text Input](#standard-text-input)
+   - [Scraped Web Data Input](#scraped-web-data-input)
 - [How to Get Spotify API Credentials](#how-to-get-spotify-api-credentials)
 
 ## Getting Started
@@ -96,7 +90,7 @@ To get the necessary info for your `.env` file you'll first need a (free) [Spoti
 
 1. After logging in and landing on the dev dashboard click _Create app_.
 
-   <img src="imgs/createapp.JPG" width="450" alt="Screenshot of the Create app screen from the Spotify Developer website">
+   <img src="https://github.com/jsspen/listeners-friend/blob/main/imgs/createapp.JPG?raw=true" width="450" alt="Screenshot of the Create app screen from the Spotify Developer website">
 
 2. Fill out the required fields:
    - Give your app a name (i.e. _Text-to-Playlist App_) and a brief description, maybe something to remind you why you made it.
@@ -104,7 +98,7 @@ To get the necessary info for your `.env` file you'll first need a (free) [Spoti
    - Check the box for _Web API_ access and save.
 3. After creating the app you'll be taken to its dashboard. Click _Settings_ in the top right corner. Everything you need for your `.env` file is here on this page:
 
-   <img src="imgs/appsettings.JPG" width="450" alt="Screenshot of the app settings screen from the Spotify Developer website">
+   <img src="https://github.com/jsspen/listeners-friend/blob/main/imgs/appsettings.JPG?raw=true" width="450" alt="Screenshot of the app settings screen from the Spotify Developer website">
 
 4. Copy the _Client ID_ and _Client Secret_ (click _View client secret_) to your `.env` file. If you forgot what Redirect URI you chose earlier you can also grab that from here. The `example.env` is prepopulated with `https://example.org/callback`.
 5. You're ready to start building playlists!
