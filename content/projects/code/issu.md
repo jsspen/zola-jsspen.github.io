@@ -1,14 +1,17 @@
 +++
-title = "issu grabber"
-description = "A quick Python script to scrape, build, and save a PDF copy of document hosted by ISSUU"
+title = "issuu grabber"
+description = "An interactive Python script to scrape, build, and save a PDF copy of any document hosted by ISSUU"
 +++
 
 # ISSUU Grabber
 
 [Github Repo](https://github.com/jsspen/issuu-grabber)
 
-A quick Python script to save a PDF copy of any document hosted by ISSUU
+An interactive Python script to scrape, build, and save a PDF copy of any document hosted by ISSUU
 
+**Ingredients:** Python, File I/O, File Conversion, HTTP Requests, Web Scraping, BeautifulSoup, HTML Parsing
+
+---
 
 ## Basic usage
 

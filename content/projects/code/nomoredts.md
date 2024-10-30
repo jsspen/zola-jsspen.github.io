@@ -1,15 +1,18 @@
 +++
 title = "no more dts"
-description = "A CLI program to handle audio conversion of video files with FFMPEG"
+description = "An interactive CLI program to handle audio conversion of video files with FFMPEG"
 +++
 
 # NoMoreDTS
+[GitHub Repo](https://github.com/jsspen/NoMoreDTS)
 
-A CLI program to handle audio conversion of video files with FFMPEG
+An interactive CLI program to handle audio conversion of video files with FFMPEG
 
-## GitHub Repo
+**Ingredients:** Python, FFMPEG, File I/O, File Conversion
 
-[NoMoreDTS](https://github.com/jsspen/NoMoreDTS)
+_*Why?*_ I have a television that cannot direct play DTS encoded audio (or FLAC) and my little Raspberry Pi can get really bogged down trying to transcode audio on the fly. I had previously encoded many of my files with DTS audio without realizing the limitations of my (admittedly quite old) TV. I've got years with of archived video and when I go to watch something and my media player shows "DTS Audio" my whole family groans. There's nothing at all wrong with DTS (or FLAC) and I wish I could play them... but for now I need to convert them.
+
+---
 
 ## Basic usage
 

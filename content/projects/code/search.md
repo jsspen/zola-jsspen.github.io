@@ -1,11 +1,15 @@
 +++
 title = "search automation"
-description = "A CLI program to handle audio conversion of video files with FFMPEG"
+description = "Automating the boring stuff"
 +++
 
-# Automated Searching with the DuckDuckGo API
+# Automating the Boring Stuff
 
-Job hunting can be a real slog but sometimes 5 minutes of code can provide a simple solution to at least a little bit of the work. Here's an example and an explanation of my thought process at the time.
+**Ingredients:** JavaScript, Browser Userscripting, Python, Excel
+
+Job hunting can be a real slog but sometimes 5 minutes of code can provide a simple solution to at least a little bit of the work. Here's an example. This isn't anything particularly complex but I've included it here as it's an example of how I've been approaching things lately and my thought process at the time of problem solving.
+
+## Manipulating the Web with Userscripts
 
 I came across a list of remote-friendly companies and I thought it would be a good idea to make my way down the list checking for openings.
 
@@ -17,25 +21,22 @@ One of my favorite things to play with lately is browser userscripts. After a qu
 // ==UserScript==
 // @name        No logos on levels.fyi list
 // @namespace   Violentmonkey Scripts
-// @match       https://www.levels.fyi/remote/*
+// @match       http*://*levels.fyi/remote/*
 // @grant       none
 // @version     1.0
 // @author      jsspen
 // @description Removes all company logos from page
 // ==/UserScript==
-
 (function() {
     'use strict';
-
     // Select all divs with class company-icon
     let iconDivs = document.querySelectorAll("div[class='company-icon']");
-
     // Loop through each div and remove it
     iconDivs.forEach(div => div.remove());
-
-
 })();
 ```
+
+## Automated Searching with Python and the DuckDuckGo API
 
 After a refresh of the page: no more icons and I could copy the list into my spreadsheet without issue. But then I started thinking about how much of a pain it was going to be to search for each company on my new list (the original page didn't include any links!) and it would be so nice to automate that part. I remembered that DuckDuckGo offers a free search API and after a quick look around I found a Python package (`duckduckgo-search`) that simplifies interacting with the API.
 
