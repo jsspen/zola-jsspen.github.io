@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="stylesheet" href="https://jordan-spencer.com/fonts.css" />
+    <link rel="stylesheet" href="https://jordan-spencer.com/style.css" />
+    <title>
+      
+    search automation - Jordan Spencer | Software Dev
+
+    </title>
+    
+  </head>
+  <body>
+    
+<div class="wrap">
+  <div class="section" id="title"></div>
+  <div class="section" id="sections">
+    
+  </div>
+  <div class="section" id="content">
+    
+    
+        
+    
+    <h1 id="automating-the-boring-stuff">Automating the Boring Stuff</h1>
+<p><strong>Ingredients:</strong> JavaScript, Browser Userscripting, Python, Excel</p>
+<p>Job hunting can be a real slog but sometimes 5 minutes of code can provide a simple solution to at least a little bit of the work. Here's an example. This isn't anything particularly complex but I've included it here as it's an example of how I've been approaching things lately and my thought process at the time of problem solving.</p>
+<h2 id="manipulating-the-web-with-userscripts">Manipulating the Web with Userscripts</h2>
+<p>I came across a list of remote-friendly companies and I thought it would be a good idea to make my way down the list checking for openings.</p>
+<p>My first thought was just to copy the list into a new page of my trusty Job Hunting Spreadsheet. Though the list was only ~200 lines it quickly froze up when I tried to drop it in. After a few minutes of waiting I saw why: it had included every company logo from the first column and some were <strong>huge</strong>! I fiddled a bit to see if there was a quick way to delete the images and retain the text but things were a mess. I tried using the text-import dialogue to paste only the text but then the formatting was a single-column disaster.</p>
+<p>One of my favorite things to play with lately is browser userscripts. After a quick peek at the list page's HTML, I wrote a quick script in ViolentMonkey to find and delete all the <code>div</code> tags with a class of <code>company-icon</code>.</p>
+<pre data-lang="js" style="background-color:#2b303b;color:#c0c5ce;" class="language-js "><code class="language-js" data-lang="js"><span style="color:#65737e;">// ==UserScript==
+</span><span style="color:#65737e;">// @name        No logos on levels.fyi list
+</span><span style="color:#65737e;">// @namespace   Violentmonkey Scripts
+</span><span style="color:#65737e;">// @match       http*://*levels.fyi/remote/*
+</span><span style="color:#65737e;">// @grant       none
+</span><span style="color:#65737e;">// @version     1.0
+</span><span style="color:#65737e;">// @author      jsspen
+</span><span style="color:#65737e;">// @description Removes all company logos from page
+</span><span style="color:#65737e;">// ==/UserScript==
+</span><span>(</span><span style="color:#b48ead;">function</span><span>() {
+</span><span>    &#39;</span><span style="color:#a3be8c;">use strict</span><span>&#39;;
+</span><span>    </span><span style="color:#65737e;">// Select all divs with class company-icon
+</span><span>    </span><span style="color:#b48ead;">let </span><span style="color:#bf616a;">iconDivs </span><span>= document.</span><span style="color:#96b5b4;">querySelectorAll</span><span>(&quot;</span><span style="color:#a3be8c;">div[class=&#39;company-icon&#39;]</span><span>&quot;);
+</span><span>    </span><span style="color:#65737e;">// Loop through each div and remove it
+</span><span>    </span><span style="color:#bf616a;">iconDivs</span><span>.</span><span style="color:#96b5b4;">forEach</span><span>(</span><span style="color:#bf616a;">div </span><span style="color:#b48ead;">=&gt; </span><span style="color:#bf616a;">div</span><span>.</span><span style="color:#96b5b4;">remove</span><span>());
+</span><span>})();
+</span></code></pre>
+<h2 id="automated-searching-with-python-and-the-duckduckgo-api">Automated Searching with Python and the DuckDuckGo API</h2>
+<p>After a refresh of the page: no more icons and I could copy the list into my spreadsheet without issue. But then I started thinking about how much of a pain it was going to be to search for each company on my new list (the original page didn't include any links!) and it would be so nice to automate that part. I remembered that DuckDuckGo offers a free search API and after a quick look around I found a Python package (<code>duckduckgo-search</code>) that simplifies interacting with the API.</p>
+<p>So I wrote a quick script that took in an array of strings (<em>company names with some find-and-replace magic to add the necessary quotes and commas to the raw text</em>) looped through the entries and interpolated each into a simple query string (<code>q=f"{company} careers page"</code>), limited the returned data to only the first result, parsed the returned data for the URL (<code>result[0]['href']</code>) and saved that along with the company name into a new row in a csv output file. A quick <code>time.sleep(2)</code> in the loop after each search slowed things down enough to avoid being rate limited.</p>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span style="color:#b48ead;">import </span><span>time
+</span><span style="color:#b48ead;">from </span><span>duckduckgo_search </span><span style="color:#b48ead;">import </span><span style="color:#bf616a;">DDGS
+</span><span>
+</span><span>companies = [&quot;</span><span style="color:#a3be8c;">Airbnb</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">Dropbox</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">Pinterest</span><span>&quot;]
+</span><span>
+</span><span style="color:#b48ead;">with </span><span style="color:#96b5b4;">open</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">companies_and_career_pages.csv</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">w</span><span>&quot;, </span><span style="color:#bf616a;">encoding</span><span>=&quot;</span><span style="color:#a3be8c;">utf-8</span><span>&quot;) </span><span style="color:#b48ead;">as </span><span>file:
+</span><span>    </span><span style="color:#b48ead;">for </span><span>company </span><span style="color:#b48ead;">in </span><span>companies:
+</span><span>        result = </span><span style="color:#bf616a;">DDGS</span><span>().</span><span style="color:#bf616a;">text</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;{company}</span><span style="color:#a3be8c;"> careers page</span><span>&quot;, </span><span style="color:#bf616a;">max_results</span><span>=</span><span style="color:#d08770;">1</span><span>)
+</span><span>        csv_line = company + &quot;</span><span style="color:#a3be8c;">,</span><span>&quot; + (result[</span><span style="color:#d08770;">0</span><span>][&#39;</span><span style="color:#a3be8c;">href</span><span>&#39;] or &#39; &#39;) + &quot;</span><span style="color:#96b5b4;">\n</span><span>&quot;
+</span><span>        file.</span><span style="color:#bf616a;">write</span><span>(csv_line)
+</span><span>        time.</span><span style="color:#bf616a;">sleep</span><span>(</span><span style="color:#d08770;">2</span><span>)
+</span></code></pre>
+<p>Once the script was finished I dropped my new csv list into my spreadsheet. <em>But the URLs weren't clickable!</em> So for a final shortcut I added a new formula column with <code>=HYPERLINK({url cell},{name cell})</code> and just like that I had a nice column of clickable links to each company's careers page!</p>
+<p>P.S. For those like me who wonder if it's possible to add the formula directly to the output file, it seems LibreOffice Calc doesn't like when you aren't writing formulas in Calc itself, so outputting files with formatting like: {𝘤𝘰𝘮𝘱𝘢𝘯𝘺},{𝘶𝘳𝘭},=𝘏𝘠𝘗𝘌𝘙𝘓𝘐𝘕𝘒(𝘉{𝘪𝘥𝘹},𝘈{𝘪𝘥𝘹}) and =𝘏𝘠𝘗𝘌𝘙𝘓𝘐𝘕𝘒("𝘩𝘵𝘵𝘱𝘴://𝘳𝘰𝘢𝘥𝘮𝘢𝘱.𝘴𝘩/𝘥𝘢𝘵𝘢-𝘢𝘯𝘢𝘭𝘺𝘴𝘵", "𝘙𝘰𝘢𝘥𝘮𝘢𝘱") unfortunately just results in plain text.</p>
+
+
+  </div>
+  
+  <div class="section bottom-menu">
+    <hr />
+    <p>
+      
+        
+          <a href="&#x2F;projects">projects</a>
+          &#183;
+        
+          <a href="&#x2F;about">about</a>
+          &#183;
+        
+          <a href="&#x2F;cv">cv</a>
+          &#183;
+        
+      
+      <a href="https:&#x2F;&#x2F;jordan-spencer.com">home</a>
+    </p>
+  </div>
+ 
+  
+
+</div>
+
+  </body>
+</html>

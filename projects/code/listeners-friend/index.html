@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="stylesheet" href="https://jordan-spencer.com/fonts.css" />
+    <link rel="stylesheet" href="https://jordan-spencer.com/style.css" />
+    <title>
+      
+    listener&#x27;s friend - Jordan Spencer | Software Dev
+
+    </title>
+    
+  </head>
+  <body>
+    
+<div class="wrap">
+  <div class="section" id="title"></div>
+  <div class="section" id="sections">
+    
+  </div>
+  <div class="section" id="content">
+    
+    
+        
+    
+    <h1 id="listener-s-friend">LISTener's Friend</h1>
+<p><a href="https://github.com/jsspen/listeners-friend">Github Repo</a></p>
+<p>A flexible, interactive program that converts album lists to Spotify playlists</p>
+<p><strong>Ingredients:</strong> Python, API, OAuth, Recursion, File I/O, Web Scraping, Selenium, Headless-Chrome, BeautifulSoup, HTML Parsing</p>
+<p><em>Below you will find the current contents of the project README to which I've added some snippets of the relevant code. If you would like a closer look at the program and how it is written please take a look at the repo linked above.</em></p>
+<hr />
+<p><em><strong>Why?</strong></em> When exploring new music I've always preferred listening to albums rather than "top" tracks or algorithmically generated playlists. The problem is that building playlists manually, say from a list like <a href="https://rateyourmusic.com/list/funks/the_wires_100_most_important_records_ever_made/">this</a>, takes a lot of copy-paste-searching and click-n-dragging, so I built this to make the process faster and easier.</p>
+<h2 id="getting-started">Getting Started</h2>
+<ol>
+<li>Clone or download a copy of this repo.</li>
+<li>Install the required dependencies: <code>pip install python-dotenv spotipy selenium bs4</code></li>
+<li>Rename the included <code>example.env</code> to <code>.env</code>, change the default input file path if desired, and update with your API credentials.</li>
+<li>Run the program: <code>python listeners_friend.py</code></li>
+<li>Select type of input source from given options
+<ul>
+<li>Option 1: Add a list of albums in the format <code>artist - album</code>, each on a new line, to <code>input.txt</code></li>
+<li>Option 2, 6, 8: Provide a URL for supported source</li>
+<li>Options 3, 4: No user input needed, fully automated</li>
+<li>Options 5, 7: Interactive user input selection</li>
+</ul>
+</li>
+<li>A new playlist will be created directly in your Spotify account, ready to play!</li>
+</ol>
+<h2 id="how-it-works">How It Works</h2>
+<h3 id="basics">Basics</h3>
+<ul>
+<li>User is authenticated with the Spotify API, either using the API credentials stored in the <code>.env</code> file or an existing token stored in the <code>.cache</code> file</li>
+<li>The chosen data source is read and the necessary information is parsed into an array of tuples in the form <code>[(artist, album)]</code> which serves as the finalized input</li>
+<li>A playlist name and description are either provided by the user (op. 1), taken directly from the data source (op. 2), or auto-generated (op. 3)</li>
+<li>The finalized input is looped through and the Spotify library is queried for each entry with <code>q="album:{album} artist:{artist}"</code> limited to the album data type with a maximum result quantity of 1 so that only the top matching result (if any) is grabbed</li>
+<li>The album match data is parsed for its URI string</li>
+<li>Albums which are't found are added to a separate list</li>
+<li>The API is again queried using the album URI to fetch the tracklist data</li>
+<li>Tracklist data is parsed for each individual track's URI</li>
+<li>Once tracks have been gathered for every album URI, a count is taken of the albums not found and this is prepended to the playlist description in the form <code>"### {albums or tracks} not found.</code></li>
+<li>A text file is saved to the current directory which contains the <code>artist - {album or track}</code> info for each album or track not found</li>
+<li>The necessary info is sent to the user's account for the creation of a new playlist and its ID is retrieved</li>
+<li>Track URIs are posted to the new playlist</li>
+</ul>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span>// utils.py
+</span><span style="color:#65737e;"># Print number of missing items to file and prepend basic info to playlist description
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_missing</span><span>(</span><span style="color:#bf616a;">missing</span><span>, </span><span style="color:#bf616a;">playlist_name</span><span>, </span><span style="color:#bf616a;">playlist_description</span><span>, </span><span style="color:#bf616a;">type</span><span>):
+</span><span>    clean_playlist_name = re.</span><span style="color:#bf616a;">sub</span><span>(</span><span style="color:#b48ead;">r</span><span>&quot;</span><span style="color:#d08770;">[/</span><span style="color:#96b5b4;">\\</span><span style="color:#d08770;">?%*:|</span><span style="color:#96b5b4;">\&quot;</span><span style="color:#d08770;">&lt;&gt;</span><span style="color:#96b5b4;">\x</span><span style="color:#d08770;">7F</span><span style="color:#96b5b4;">\x</span><span style="color:#d08770;">00-</span><span style="color:#96b5b4;">\x</span><span style="color:#d08770;">1F]</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">-</span><span>&quot;, playlist_name)
+</span><span>    </span><span style="color:#b48ead;">with </span><span style="color:#96b5b4;">open</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">not_found_for_</span><span>{clean_playlist_name}</span><span style="color:#a3be8c;">_</span><span>{today}</span><span style="color:#a3be8c;">.txt</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">w</span><span>&quot;, </span><span style="color:#bf616a;">encoding</span><span>=&quot;</span><span style="color:#a3be8c;">utf-8</span><span>&quot;) </span><span style="color:#b48ead;">as </span><span>file:
+</span><span>            file.</span><span style="color:#bf616a;">write</span><span>(&quot;</span><span style="color:#a3be8c;">Not Found:</span><span style="color:#96b5b4;">\n</span><span>&quot;)
+</span><span>            </span><span style="color:#b48ead;">for </span><span>item </span><span style="color:#b48ead;">in </span><span>missing:
+</span><span>                file.</span><span style="color:#bf616a;">write</span><span>(item + &quot;</span><span style="color:#96b5b4;">\n</span><span>&quot;)
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(</span><span style="color:#96b5b4;">len</span><span>(missing) &gt; </span><span style="color:#d08770;">1</span><span>):
+</span><span>        </span><span style="color:#96b5b4;">type </span><span>= </span><span style="color:#96b5b4;">type </span><span>+ &quot;</span><span style="color:#a3be8c;">s</span><span>&quot;;
+</span><span>    playlist_description = </span><span style="color:#bf616a;">str</span><span>(</span><span style="color:#96b5b4;">len</span><span>(missing)) + </span><span style="color:#b48ead;">f</span><span>&quot; {</span><span style="color:#96b5b4;">type</span><span>}</span><span style="color:#a3be8c;"> not found. </span><span>&quot; + playlist_description
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Info on missing </span><span>{</span><span style="color:#96b5b4;">type</span><span>}</span><span style="color:#a3be8c;"> saved to text file in directory...</span><span>&quot;)
+</span><span>    </span><span style="color:#b48ead;">return </span><span>playlist_description
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">album_search</span><span>(</span><span style="color:#bf616a;">playlist_name</span><span>, </span><span style="color:#bf616a;">playlist_description</span><span>, </span><span style="color:#bf616a;">input_list</span><span>, </span><span style="color:#bf616a;">spotify</span><span>):
+</span><span>    </span><span style="color:#65737e;"># Search for each album
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Searching Spotify library for albums...</span><span>&quot;)
+</span><span>    </span><span style="color:#b48ead;">for </span><span>artist, album </span><span style="color:#b48ead;">in </span><span>input_list:
+</span><span>        </span><span style="color:#65737e;"># album specific search using Spotify&#39;s &quot;album:{query}&quot; format
+</span><span>        </span><span style="color:#65737e;"># returns only the top result
+</span><span>        result = spotify.</span><span style="color:#bf616a;">search</span><span>(</span><span style="color:#bf616a;">q</span><span>=&#39;</span><span style="color:#a3be8c;">album:</span><span>&#39; + album + &#39;</span><span style="color:#a3be8c;"> artist:</span><span>&#39; + artist, </span><span style="color:#bf616a;">type</span><span>=&quot;</span><span style="color:#a3be8c;">album</span><span>&quot;, </span><span style="color:#bf616a;">limit</span><span>=</span><span style="color:#d08770;">1</span><span>)
+</span><span>        </span><span style="color:#b48ead;">if </span><span>result[&#39;</span><span style="color:#a3be8c;">albums</span><span>&#39;][&#39;</span><span style="color:#a3be8c;">items</span><span>&#39;]:
+</span><span>            album_uris.</span><span style="color:#bf616a;">append</span><span>(result[&#39;</span><span style="color:#a3be8c;">albums</span><span>&#39;][&#39;</span><span style="color:#a3be8c;">items</span><span>&#39;][</span><span style="color:#d08770;">0</span><span>][&#39;</span><span style="color:#a3be8c;">uri</span><span>&#39;])
+</span><span>        </span><span style="color:#b48ead;">else</span><span>:
+</span><span>            missing.</span><span style="color:#bf616a;">append</span><span>(artist + &quot;</span><span style="color:#a3be8c;"> - </span><span>&quot; + album)
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(missing) &gt; </span><span style="color:#d08770;">0</span><span>:
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;{</span><span style="color:#96b5b4;">len</span><span>(missing)}</span><span style="color:#a3be8c;"> albums weren&#39;t found...</span><span>&quot;)
+</span><span>        playlist_description = </span><span style="color:#bf616a;">handle_missing</span><span>(missing, playlist_name, playlist_description, &quot;</span><span style="color:#a3be8c;">album</span><span>&quot;)
+</span><span>        
+</span><span>    track_uris = </span><span style="color:#bf616a;">track_search</span><span>(spotify, album_uris)
+</span><span>    </span><span style="color:#b48ead;">return </span><span>track_uris, playlist_description, (</span><span style="color:#96b5b4;">len</span><span>(input_list) - </span><span style="color:#96b5b4;">len</span><span>(missing))
+</span><span>
+</span><span style="color:#65737e;"># Take album URIs and return track URIs
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">track_search</span><span>(</span><span style="color:#bf616a;">spotify</span><span>, </span><span style="color:#bf616a;">album_uris </span><span>= </span><span style="color:#d08770;">None</span><span>, </span><span style="color:#bf616a;">track_input </span><span>= </span><span style="color:#d08770;">None</span><span>, </span><span style="color:#bf616a;">playlist_name </span><span>= </span><span style="color:#d08770;">None</span><span>, </span><span style="color:#bf616a;">playlist_description </span><span>= </span><span style="color:#d08770;">None</span><span>):
+</span><span>    </span><span style="color:#b48ead;">if </span><span>album_uris:
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Searching for associated tracks...</span><span>&quot;)
+</span><span>        </span><span style="color:#65737e;"># Get the tracks for each album URI
+</span><span>        </span><span style="color:#b48ead;">for </span><span>album </span><span style="color:#b48ead;">in </span><span>album_uris:
+</span><span>            tracks = spotify.</span><span style="color:#bf616a;">album_tracks</span><span>(album)[&#39;</span><span style="color:#a3be8c;">items</span><span>&#39;]
+</span><span>            </span><span style="color:#65737e;"># Get the URIs for each track
+</span><span>            </span><span style="color:#b48ead;">for </span><span>track </span><span style="color:#b48ead;">in </span><span>tracks:
+</span><span>                track_uris.</span><span style="color:#bf616a;">append</span><span>(track[&#39;</span><span style="color:#a3be8c;">uri</span><span>&#39;])
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;{</span><span style="color:#96b5b4;">len</span><span>(album_uris)}</span><span style="color:#a3be8c;"> albums have been converted to </span><span>{</span><span style="color:#96b5b4;">len</span><span>(track_uris)}</span><span style="color:#a3be8c;"> tracks...</span><span>&quot;)
+</span><span>        </span><span style="color:#b48ead;">return </span><span>track_uris
+</span><span>    </span><span style="color:#b48ead;">elif </span><span>track_input:
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Searching Spotify library for tracks...</span><span>&quot;)
+</span><span>        </span><span style="color:#b48ead;">for </span><span>track </span><span style="color:#b48ead;">in </span><span>track_input:
+</span><span>            artist, title = track
+</span><span>            result = spotify.</span><span style="color:#bf616a;">search</span><span>(</span><span style="color:#bf616a;">q</span><span>=</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">artist:</span><span>{artist}</span><span style="color:#a3be8c;"> track:</span><span>{title}&quot;, </span><span style="color:#bf616a;">type</span><span>=&quot;</span><span style="color:#a3be8c;">track</span><span>&quot;, </span><span style="color:#bf616a;">limit</span><span>=</span><span style="color:#d08770;">1</span><span>)
+</span><span>            </span><span style="color:#b48ead;">if </span><span>result[&#39;</span><span style="color:#a3be8c;">tracks</span><span>&#39;][&#39;</span><span style="color:#a3be8c;">items</span><span>&#39;]:
+</span><span>                uri = result[&#39;</span><span style="color:#a3be8c;">tracks</span><span>&#39;][&#39;</span><span style="color:#a3be8c;">items</span><span>&#39;][</span><span style="color:#d08770;">0</span><span>][&#39;</span><span style="color:#a3be8c;">uri</span><span>&#39;]
+</span><span>                </span><span style="color:#b48ead;">if </span><span>uri:
+</span><span>                    track_uris.</span><span style="color:#bf616a;">append</span><span>(uri)
+</span><span>            </span><span style="color:#b48ead;">else</span><span>:
+</span><span>                missing.</span><span style="color:#bf616a;">append</span><span>(artist + &quot;</span><span style="color:#a3be8c;"> - </span><span>&quot; + title)
+</span><span>        </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(missing) &gt; </span><span style="color:#d08770;">0</span><span>:
+</span><span>            </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;{</span><span style="color:#96b5b4;">len</span><span>(missing)}</span><span style="color:#a3be8c;"> tracks weren&#39;t found...</span><span>&quot;)
+</span><span>            playlist_description = </span><span style="color:#bf616a;">handle_missing</span><span>(missing, playlist_name, playlist_description, &quot;</span><span style="color:#a3be8c;">track</span><span>&quot;)
+</span><span>        </span><span style="color:#b48ead;">return </span><span>track_uris, playlist_description
+</span><span>
+</span><span style="color:#65737e;"># Check if track_uris &gt; 11,000 (the max playlist size) and split into two playlists if so
+</span><span style="color:#65737e;"># You don&#39;t need more than two... right? 22,000 tracks seems like an OK maximum
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">giant_check</span><span>(</span><span style="color:#bf616a;">track_uris</span><span>, </span><span style="color:#bf616a;">playlist_description</span><span>, </span><span style="color:#bf616a;">playlist_name</span><span>, </span><span style="color:#bf616a;">spotify</span><span>):
+</span><span>    overflow_track_uris = []
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(&#39;</span><span style="color:#a3be8c;">Uh oh, this list is too big to contain in a single playlist!</span><span>&#39;)
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Splitting </span><span>{</span><span style="color:#96b5b4;">len</span><span>(track_uris)}</span><span style="color:#a3be8c;"> tracks in two...</span><span>&quot;)
+</span><span>    overflow_track_uris = track_uris[</span><span style="color:#d08770;">11000</span><span>:]
+</span><span>    max_track_uris = track_uris[:</span><span style="color:#d08770;">11000</span><span>]
+</span><span>    overflow_playlist_name = playlist_name + &quot;</span><span style="color:#a3be8c;"> (Part 2)</span><span>&quot;
+</span><span>    playlist_name = playlist_name + &quot;</span><span style="color:#a3be8c;"> (Part 1)</span><span>&quot;
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Creating </span><span>{playlist_name}</span><span style="color:#a3be8c;">, which contains 11,000 tracks</span><span>&quot;)
+</span><span>    </span><span style="color:#bf616a;">create_playlist</span><span>(max_track_uris, playlist_description, playlist_name, spotify)
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Creating </span><span>{overflow_playlist_name}</span><span style="color:#a3be8c;">, which contains </span><span>{</span><span style="color:#96b5b4;">len</span><span>(overflow_track_uris)}</span><span style="color:#a3be8c;"> tracks</span><span>&quot;)
+</span><span>    </span><span style="color:#bf616a;">create_playlist</span><span>(overflow_track_uris, playlist_description, overflow_playlist_name, spotify)
+</span><span>    
+</span><span>
+</span><span style="color:#65737e;"># Break potentially huge list of tracks into easily manageable chunks
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">chunk_list</span><span>(</span><span style="color:#bf616a;">lst</span><span>, </span><span style="color:#bf616a;">chunk_size</span><span>):
+</span><span>    </span><span style="color:#b48ead;">for </span><span>i </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">range</span><span>(</span><span style="color:#d08770;">0</span><span>, </span><span style="color:#96b5b4;">len</span><span>(lst), chunk_size):
+</span><span>        </span><span style="color:#b48ead;">yield </span><span>lst[i:i + chunk_size]
+</span><span>
+</span><span style="color:#65737e;"># Take track URIs and final playlist title &amp; description
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">create_playlist</span><span>(</span><span style="color:#bf616a;">track_uris</span><span>, </span><span style="color:#bf616a;">playlist_description</span><span>, </span><span style="color:#bf616a;">playlist_name</span><span>, </span><span style="color:#bf616a;">spotify</span><span>):
+</span><span>    </span><span style="color:#65737e;"># Split into two playlists if maximum track count is hit
+</span><span>    </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(track_uris) &gt; </span><span style="color:#d08770;">11000</span><span>:
+</span><span>        track_uris = </span><span style="color:#bf616a;">giant_check</span><span>(track_uris, playlist_description, playlist_name, spotify)
+</span><span>    user_id = spotify.</span><span style="color:#bf616a;">current_user</span><span>()[&quot;</span><span style="color:#a3be8c;">id</span><span>&quot;]
+</span><span>    </span><span style="color:#b48ead;">if </span><span>track_uris:
+</span><span>        playlist = spotify.</span><span style="color:#bf616a;">user_playlist_create</span><span>(user_id, playlist_name, </span><span style="color:#bf616a;">public</span><span>=</span><span style="color:#d08770;">True</span><span>, </span><span style="color:#bf616a;">description</span><span>=playlist_description)
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Playlist </span><span>{playlist_name}</span><span style="color:#a3be8c;"> has been created...</span><span>&quot;)
+</span><span>        track_uris = [uri </span><span style="color:#b48ead;">for </span><span>uri </span><span style="color:#b48ead;">in </span><span>track_uris </span><span style="color:#b48ead;">if </span><span>uri is not </span><span style="color:#d08770;">None</span><span>]
+</span><span>
+</span><span>        </span><span style="color:#65737e;"># Split to chunks of 100 tracks, the max allowed by the API in a single post
+</span><span>        </span><span style="color:#b48ead;">for </span><span>chunk </span><span style="color:#b48ead;">in </span><span style="color:#bf616a;">chunk_list</span><span>(track_uris, </span><span style="color:#d08770;">100</span><span>):
+</span><span>            </span><span style="color:#b48ead;">try</span><span>:
+</span><span>                spotify.</span><span style="color:#bf616a;">playlist_add_items</span><span>(playlist[&#39;</span><span style="color:#a3be8c;">id</span><span>&#39;], chunk)
+</span><span>            </span><span style="color:#b48ead;">except </span><span>spotipy.exceptions.SpotifyException </span><span style="color:#b48ead;">as </span><span>e:
+</span><span>                </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">An error occurred: </span><span>{e}&quot;)
+</span><span>    </span><span style="color:#b48ead;">else</span><span>:
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">List of track URIs is empty, nothing added to playlist.</span><span>&quot;)
+</span></code></pre>
+<p><em><strong>Spotify API Limitations</strong></em></p>
+<ul>
+<li>Only individual tracks or podcast episodes, not albums, can be added to playlists, so this is why URIs for each individual track on an album are collected rather than just posting the album URI to the playlist</li>
+<li>Only 100 tracks can be posted to a playlist at a time so large lists of track URIs are broken into chunks of 100 or less before being sent</li>
+<li>A Spotify playlist can have a maximum of 11,000 tracks, which you can certainly run up against if using a huge RYM list, and in those cases two playlists will be created <code>{playlist name} (Part 1)</code> with the first 11,000 tracks and <code>{playlist name} (Part 2)</code> with the overflow.</li>
+</ul>
+<h3 id="authorization">Authorization</h3>
+<p><em>It is necessary to have Spotify API credentials stored in the <code>.env</code> file. If you need help, see the <a href="https://jordan-spencer.com/projects/code/listeners-friend/#how-to-get-spotify-api-credentials">guide</a> at the end of this doc for details.</em></p>
+<p>The first time you run the program you'll be sent to a Spotify authorization page in your browser. It should be asking you if you want to allow connecting to { <em>whatever you named your app when getting your API credentails</em> }. After this you'll be routed to your Redirect URI. Copy the <u>full</u> URL and paste it into the command prompt to finalize authorization. Your OAuth token will be stored in the <code>.cache</code> file.</p>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span style="color:#b48ead;">from </span><span>dotenv </span><span style="color:#b48ead;">import </span><span>load_dotenv
+</span><span>
+</span><span style="color:#b48ead;">import </span><span>spotipy
+</span><span style="color:#b48ead;">from </span><span>spotipy.oauth2 </span><span style="color:#b48ead;">import </span><span>SpotifyOAuth
+</span><span>
+</span><span style="color:#bf616a;">load_dotenv</span><span>()
+</span><span>
+</span><span>spotify = spotipy.</span><span style="color:#bf616a;">Spotify</span><span>(</span><span style="color:#bf616a;">auth_manager</span><span>=</span><span style="color:#bf616a;">SpotifyOAuth</span><span>(
+</span><span>   </span><span style="color:#bf616a;">client_id</span><span>=os.</span><span style="color:#bf616a;">getenv</span><span>(&quot;</span><span style="color:#a3be8c;">SPOTIPY_CLIENT_ID</span><span>&quot;),
+</span><span>   </span><span style="color:#bf616a;">client_secret</span><span>=os.</span><span style="color:#bf616a;">getenv</span><span>(&quot;</span><span style="color:#a3be8c;">SPOTIPY_CLIENT_SECRET</span><span>&quot;),
+</span><span>   </span><span style="color:#bf616a;">redirect_uri</span><span>=os.</span><span style="color:#bf616a;">getenv</span><span>(&quot;</span><span style="color:#a3be8c;">SPOTIPY_REDIRECT_URI</span><span>&quot;),
+</span><span>   </span><span style="color:#bf616a;">scope</span><span>=&quot;</span><span style="color:#a3be8c;">playlist-modify-public</span><span>&quot;
+</span><span>))
+</span></code></pre>
+<h3 id="options">Options</h3>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span>// utils.py
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">display_options</span><span>(</span><span style="color:#bf616a;">options</span><span>):
+</span><span>    </span><span style="color:#65737e;"># Check if this is just a bunch of strings to print or something more complex
+</span><span>    </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">type</span><span>(options[</span><span style="color:#d08770;">0</span><span>]) == str:
+</span><span>        </span><span style="color:#b48ead;">for </span><span>idx, option </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">enumerate</span><span>(options, </span><span style="color:#bf616a;">start</span><span>=</span><span style="color:#d08770;">1</span><span>):
+</span><span>            </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;{idx}</span><span style="color:#a3be8c;">. </span><span>{option}&quot;)
+</span><span>    </span><span style="color:#65737e;"># Right now this is just for displaying lists of NTS Episodes
+</span><span>    </span><span style="color:#b48ead;">else</span><span>:
+</span><span>        </span><span style="color:#b48ead;">for </span><span>idx, option </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">enumerate</span><span>(options, </span><span style="color:#bf616a;">start</span><span>=</span><span style="color:#d08770;">1</span><span>):
+</span><span>            tags = &quot;</span><span style="color:#a3be8c;"> #</span><span>&quot;.</span><span style="color:#bf616a;">join</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;{option[&#39;</span><span style="color:#a3be8c;">tags</span><span>&#39;][i]}&quot; </span><span style="color:#b48ead;">for </span><span>i </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">range</span><span>(</span><span style="color:#96b5b4;">len</span><span>(option[&quot;</span><span style="color:#a3be8c;">tags</span><span>&quot;])))
+</span><span>            </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;{idx}</span><span style="color:#a3be8c;">. </span><span>{option[&#39;</span><span style="color:#a3be8c;">date</span><span>&#39;]} {option[&#39;</span><span style="color:#a3be8c;">title</span><span>&#39;]}</span><span style="color:#a3be8c;">, </span><span>{option[&#39;</span><span style="color:#a3be8c;">location</span><span>&#39;]}</span><span style="color:#a3be8c;"> #</span><span>{tags}&quot;)
+</span><span>        
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">get_user_selection</span><span>(</span><span style="color:#bf616a;">options</span><span>):
+</span><span>    </span><span style="color:#b48ead;">while </span><span style="color:#d08770;">True</span><span>:
+</span><span>        </span><span style="color:#bf616a;">display_options</span><span>(options)
+</span><span>        </span><span style="color:#b48ead;">try</span><span>:
+</span><span>            </span><span style="color:#96b5b4;">print</span><span>()
+</span><span>            selected_option = </span><span style="color:#bf616a;">int</span><span>(</span><span style="color:#96b5b4;">input</span><span>(&quot;</span><span style="color:#a3be8c;">Please select an option: </span><span>&quot;))
+</span><span>            </span><span style="color:#b48ead;">if </span><span style="color:#d08770;">1 </span><span>&lt;= selected_option &lt;= </span><span style="color:#96b5b4;">len</span><span>(options):
+</span><span>                </span><span style="color:#b48ead;">return </span><span>selected_option
+</span><span>            </span><span style="color:#b48ead;">else</span><span>:
+</span><span>                </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Invalid selection. Please choose a number between 1 and </span><span>{</span><span style="color:#96b5b4;">len</span><span>(options)}</span><span style="color:#a3be8c;">.</span><span>&quot;)
+</span><span>        </span><span style="color:#b48ead;">except </span><span>ValueError:
+</span><span>            </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Invalid input. Please enter a number.</span><span>&quot;)
+</span></code></pre>
+<h4 id="option-1-use-txt-file">Option 1: Use txt file</h4>
+<ul>
+<li>Filepath is read from the <code>.env</code> file, default is <code>./input.txt</code></li>
+<li>Input in the form of <code>artist - album \n</code> is parsed from the text file into the finalized input array</li>
+<li>User is prompted to enter a <em>name</em> and an (optional) <em>description</em> for the new playlist</li>
+</ul>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span>//main.py
+</span><span style="color:#b48ead;">if </span><span>selected_option == </span><span style="color:#d08770;">1</span><span>:
+</span><span>   </span><span style="color:#b48ead;">with </span><span style="color:#96b5b4;">open</span><span>(os.</span><span style="color:#bf616a;">getenv</span><span>(&quot;</span><span style="color:#a3be8c;">INPUT_PATH</span><span>&quot;), &quot;</span><span style="color:#a3be8c;">r</span><span>&quot;) </span><span style="color:#b48ead;">as </span><span>file:
+</span><span>      input_list = [</span><span style="color:#bf616a;">tuple</span><span>(line.</span><span style="color:#bf616a;">strip</span><span>().</span><span style="color:#bf616a;">split</span><span>(&quot;</span><span style="color:#a3be8c;"> - </span><span>&quot;, </span><span style="color:#d08770;">1</span><span>)) </span><span style="color:#b48ead;">for </span><span>line </span><span style="color:#b48ead;">in </span><span>file </span><span style="color:#b48ead;">if </span><span>line.</span><span style="color:#bf616a;">strip</span><span>()]
+</span><span>      playlist_name = </span><span style="color:#96b5b4;">input</span><span>(&quot;</span><span style="color:#a3be8c;">Enter playlist name: </span><span>&quot;)
+</span><span>      playlist_description = </span><span style="color:#96b5b4;">input</span><span>(&quot;</span><span style="color:#a3be8c;">Enter playlist description: </span><span>&quot;)
+</span><span>
+</span><span>// </span><span style="color:#d08770;">... </span><span>snip </span><span style="color:#d08770;">...
+</span><span>
+</span><span style="color:#b48ead;">if </span><span>output_type == &#39;</span><span style="color:#a3be8c;">albums</span><span>&#39;:  
+</span><span>   </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Creating an album-based playlist</span><span>&quot;)
+</span><span>   track_uris, playlist_description, count = </span><span style="color:#bf616a;">album_search</span><span>(playlist_name, playlist_description, input_list, spotify)
+</span><span>
+</span><span>// </span><span style="color:#d08770;">... </span><span>snip </span><span style="color:#d08770;">...
+</span><span>
+</span><span style="color:#bf616a;">create_playlist</span><span>(track_uris, playlist_description, playlist_name, spotify)
+</span><span>   </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Playlist </span><span style="color:#96b5b4;">\&quot;</span><span>{playlist_name}</span><span style="color:#96b5b4;">\&quot;</span><span style="color:#a3be8c;"> has been successfully created!</span><span>&quot;)
+</span><span>   </span><span style="color:#b48ead;">if </span><span>output_type == &#39;</span><span style="color:#a3be8c;">tracks</span><span>&#39;:
+</span><span>      </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">It contains </span><span>{</span><span style="color:#96b5b4;">len</span><span>(track_uris)}</span><span style="color:#a3be8c;"> tracks!</span><span>&quot;)
+</span><span>   </span><span style="color:#b48ead;">elif </span><span>output_type == &#39;</span><span style="color:#a3be8c;">albums</span><span>&#39;:
+</span><span>      </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">It contains </span><span>{count}</span><span style="color:#a3be8c;"> albums for a total of </span><span>{</span><span style="color:#96b5b4;">len</span><span>(track_uris)}</span><span style="color:#a3be8c;"> tracks!</span><span>&quot;)
+</span><span>   </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Get to listening!</span><span>&quot;)
+</span></code></pre>
+<h4 id="options-2-8-scraped-web-data-input">Options 2-8: Scraped Web Data Input</h4>
+<p>Lists hosted on supported websites can be scraped using Selenium and BeautifulSoup to build the finalized input array</p>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span>//scraper.py
+</span><span>
+</span><span style="color:#b48ead;">import </span><span>os
+</span><span style="color:#b48ead;">from </span><span>dotenv </span><span style="color:#b48ead;">import </span><span>load_dotenv
+</span><span style="color:#b48ead;">from </span><span>selenium </span><span style="color:#b48ead;">import </span><span>webdriver
+</span><span style="color:#b48ead;">from </span><span>selenium.webdriver.chrome.service </span><span style="color:#b48ead;">import </span><span>Service
+</span><span style="color:#b48ead;">from </span><span>selenium.webdriver.chrome.options </span><span style="color:#b48ead;">import </span><span>Options
+</span><span style="color:#b48ead;">from </span><span>bs4 </span><span style="color:#b48ead;">import </span><span>BeautifulSoup
+</span><span>
+</span><span style="color:#bf616a;">load_dotenv</span><span>()
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">get_soup</span><span>(</span><span style="color:#bf616a;">url</span><span>):
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Fetching data...</span><span>&quot;)
+</span><span>    chrome_options = </span><span style="color:#bf616a;">Options</span><span>()
+</span><span>    chrome_options.</span><span style="color:#bf616a;">add_argument</span><span>(&quot;</span><span style="color:#a3be8c;">--headless</span><span>&quot;)
+</span><span>    chrome_options.</span><span style="color:#bf616a;">add_argument</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">user-agent=</span><span>{os.</span><span style="color:#bf616a;">getenv</span><span>(&#39;</span><span style="color:#a3be8c;">USER_AGENT</span><span>&#39;)}&quot;)
+</span><span>    chrome_options.</span><span style="color:#bf616a;">add_argument</span><span>(&quot;</span><span style="color:#a3be8c;">--no-sandbox</span><span>&quot;)
+</span><span>    chrome_options.</span><span style="color:#bf616a;">add_argument</span><span>(&quot;</span><span style="color:#a3be8c;">--disable-dev-shm-usage</span><span>&quot;)
+</span><span>
+</span><span>    driver = webdriver.</span><span style="color:#bf616a;">Chrome</span><span>(</span><span style="color:#bf616a;">service</span><span>=</span><span style="color:#bf616a;">Service</span><span>(), </span><span style="color:#bf616a;">options</span><span>=chrome_options)
+</span><span>    driver.</span><span style="color:#bf616a;">get</span><span>(url)
+</span><span>    html = driver.page_source
+</span><span>    driver.</span><span style="color:#bf616a;">quit</span><span>()
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">return </span><span style="color:#bf616a;">BeautifulSoup</span><span>(html, &#39;</span><span style="color:#a3be8c;">html.parser</span><span>&#39;)
+</span></code></pre>
+<p><em>If you are running the program in Bash you may have difficulty entering a URL for options 2 or 8!</em></p>
+<h5 id="option-2-use-rateyourmusic-list-url">Option 2: Use RateYourMusic List URL</h5>
+<ul>
+<li>The URL for a list at <a href="https://rateyourmusic.com/lists/">RateYourMusic</a> can be supplied as an input source</li>
+<li>Playlist name is automatically set to the name of the list and description is set to the list description (truncated if it runs beyond Spotify's 300 character limit)</li>
+<li>The program will iterate through multi-page lists <em>but</em> you may experience a premature end due to RYM's use of the occasional random CloudFlare captcha
+<ul>
+<li>A way to circumvent this is tba, for now just retry or pass in the URL of the page where it stopped</li>
+</ul>
+</li>
+</ul>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span>// option_handlers.py
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_rym_list</span><span>(</span><span style="color:#bf616a;">soup</span><span>):
+</span><span>    </span><span style="color:#b48ead;">global </span><span>page
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Processing page </span><span>{</span><span style="color:#bf616a;">str</span><span>(page)}</span><span style="color:#a3be8c;">...</span><span>&quot;)
+</span><span>    playlist_name = soup.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">h1</span><span>&#39;).</span><span style="color:#bf616a;">get_text</span><span>(</span><span style="color:#bf616a;">strip</span><span>=</span><span style="color:#d08770;">True</span><span>)
+</span><span>    playlist_description = soup.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">span</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">rendered_text</span><span>&#39;)
+</span><span>    </span><span style="color:#b48ead;">if </span><span>playlist_description is </span><span style="color:#d08770;">None</span><span>:
+</span><span>        playlist_description = &#39;&#39;
+</span><span>    </span><span style="color:#b48ead;">else</span><span>:
+</span><span>        playlist_description = playlist_description.</span><span style="color:#bf616a;">get_text</span><span>(</span><span style="color:#bf616a;">strip</span><span>=</span><span style="color:#d08770;">True</span><span>)
+</span><span>    </span><span style="color:#65737e;"># Truncate long descriptions to fit within Spotify&#39;s 300 character limit
+</span><span>    </span><span style="color:#65737e;"># Also taking into consideration the 19-21 chars of &quot;### items not found. &quot; prepended later
+</span><span>    playlist_description = (playlist_description[:</span><span style="color:#d08770;">276</span><span>] + &#39;</span><span style="color:#a3be8c;">...</span><span>&#39;) </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(playlist_description) &gt; </span><span style="color:#d08770;">279 </span><span style="color:#b48ead;">else </span><span>playlist_description
+</span><span>    
+</span><span>    has_next_page = </span><span style="color:#d08770;">False
+</span><span>    next_url = </span><span style="color:#d08770;">None
+</span><span>    
+</span><span>    nav_div = soup.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">div</span><span>&#39;, </span><span style="color:#bf616a;">id</span><span>=&#39;</span><span style="color:#a3be8c;">nav_bottom</span><span>&#39;)
+</span><span>    </span><span style="color:#b48ead;">if </span><span>nav_div:
+</span><span>        nav_span = nav_div.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">span</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">navspan</span><span>&#39;)
+</span><span>        </span><span style="color:#b48ead;">if </span><span>nav_span:
+</span><span>            navlink_next = nav_span.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">a</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">navlinknext</span><span>&#39;)
+</span><span>            </span><span style="color:#b48ead;">if </span><span>navlink_next:
+</span><span>                next_url = navlink_next[&#39;</span><span style="color:#a3be8c;">href</span><span>&#39;]
+</span><span>                </span><span style="color:#b48ead;">if </span><span>next_url:
+</span><span>                    next_url = &quot;</span><span style="color:#a3be8c;">https://rateyourmusic.com</span><span>&quot; + next_url
+</span><span>                    has_next_page = </span><span style="color:#d08770;">True
+</span><span>        
+</span><span>    list = soup.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">table</span><span>&#39;, </span><span style="color:#bf616a;">id</span><span>=&#39;</span><span style="color:#a3be8c;">user_list</span><span>&#39;)
+</span><span>    </span><span style="color:#b48ead;">if </span><span>list is </span><span style="color:#d08770;">None</span><span>:
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">List not found on page </span><span style="color:#d08770;">{page}</span><span style="color:#a3be8c;">, potential captcha block</span><span>&quot;)
+</span><span>    </span><span style="color:#b48ead;">else</span><span>: 
+</span><span>        </span><span style="color:#b48ead;">for </span><span>row </span><span style="color:#b48ead;">in </span><span>list.</span><span style="color:#bf616a;">find_all</span><span>(&#39;</span><span style="color:#a3be8c;">tr</span><span>&#39;):
+</span><span>            artist_tag = row.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">a</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">list_artist</span><span>&#39;)
+</span><span>            album_tag = row.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">a</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">list_album</span><span>&#39;)
+</span><span>            </span><span style="color:#b48ead;">if </span><span>not artist_tag or not album_tag:
+</span><span>                </span><span style="color:#b48ead;">continue
+</span><span>            artist = artist_tag.</span><span style="color:#bf616a;">get_text</span><span>(</span><span style="color:#bf616a;">strip</span><span>=</span><span style="color:#d08770;">True</span><span>)
+</span><span>            album = album_tag.</span><span style="color:#bf616a;">get_text</span><span>(</span><span style="color:#bf616a;">strip</span><span>=</span><span style="color:#d08770;">True</span><span>)
+</span><span>            input_list.</span><span style="color:#bf616a;">append</span><span>((artist, album))
+</span><span>    </span><span style="color:#b48ead;">if </span><span>has_next_page == </span><span style="color:#d08770;">True</span><span>:
+</span><span>        page = page + </span><span style="color:#d08770;">1
+</span><span>        next_bowl_of_soup = </span><span style="color:#bf616a;">get_soup</span><span>(next_url)
+</span><span>        </span><span style="color:#bf616a;">handle_rym_list</span><span>(next_bowl_of_soup)
+</span><span>    </span><span style="color:#b48ead;">return </span><span>playlist_name, playlist_description, input_list
+</span></code></pre>
+<h5 id="option-3-use-current-boomkat-bestsellers-list">Option 3: Use Current Boomkat Bestsellers List</h5>
+<ul>
+<li>The <a href="https://boomkat.com/bestsellers?q%5Brelease_date%5D=last-week">Boomkat Bestsellers</a> list is used as input source</li>
+<li>Playlist name is automatically set to <code>Boomkat Bestsellers</code> and the description is set to <code>For the week ending YYYY-MM-DD</code>, where date is the day the data was gathered</li>
+<li>Timespan default is one week but can be changed by modifying the (hardcoded) source URL <code>https://boomkat.com/bestsellers?q[release_date]=last-week</code> where <code>last-week</code> can be replaced with <code>last-month</code> or <code>last-year</code>.</li>
+</ul>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span>// option_handlers.py
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_boomkat</span><span>(</span><span style="color:#bf616a;">soup</span><span>):
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#b48ead;">f</span><span>&quot;</span><span style="color:#a3be8c;">Processing Boomkat Bestsellers list for the week ending </span><span>{today}</span><span style="color:#a3be8c;">...</span><span>&quot;)
+</span><span>    table = soup.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">div</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">bestsellers</span><span>&#39;)
+</span><span>    </span><span style="color:#b48ead;">if </span><span>table is </span><span style="color:#d08770;">None</span><span>:
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Table not found</span><span>&quot;)
+</span><span>    bestsellers_list = table.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">ol</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">bestsellers-list</span><span>&#39;)
+</span><span>    </span><span style="color:#b48ead;">if </span><span>bestsellers_list is </span><span style="color:#d08770;">None</span><span>:
+</span><span>        </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">List not found</span><span>&quot;)
+</span><span>    </span><span style="color:#b48ead;">else</span><span>: 
+</span><span>        </span><span style="color:#b48ead;">for </span><span>item </span><span style="color:#b48ead;">in </span><span>bestsellers_list.</span><span style="color:#bf616a;">find_all</span><span>(&#39;</span><span style="color:#a3be8c;">li</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">bestsellers-item</span><span>&#39;):
+</span><span>            artist = item.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">div</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">product-name</span><span>&#39;).</span><span style="color:#bf616a;">find_all</span><span>(&#39;</span><span style="color:#a3be8c;">a</span><span>&#39;)[</span><span style="color:#d08770;">0</span><span>].text.</span><span style="color:#bf616a;">strip</span><span>().</span><span style="color:#bf616a;">title</span><span>()
+</span><span>            album = item.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">div</span><span>&#39;, </span><span style="color:#bf616a;">class_</span><span>=&#39;</span><span style="color:#a3be8c;">product-name</span><span>&#39;).</span><span style="color:#bf616a;">find_all</span><span>(&#39;</span><span style="color:#a3be8c;">a</span><span>&#39;)[</span><span style="color:#d08770;">1</span><span>].text.</span><span style="color:#bf616a;">strip</span><span>()
+</span><span>            input_list.</span><span style="color:#bf616a;">append</span><span>((artist, album))
+</span><span>    playlist_name = &quot;</span><span style="color:#a3be8c;">This Week&#39;s Boomkat Bestsellers</span><span>&quot;
+</span><span>    playlist_description = &quot;</span><span style="color:#a3be8c;">For the week ending </span><span>&quot; + today
+</span><span>    </span><span style="color:#b48ead;">return </span><span>playlist_name, playlist_description, input_list
+</span></code></pre>
+<h5 id="option-4-use-current-forced-exposure-bestsellers-list">Option 4: Use Current Forced Exposure Bestsellers List</h5>
+<ul>
+<li>The <a href="https://forcedexposure.com/Best/BestIndex.html">Forced Exposure Bestsellers</a> list is used as input source</li>
+<li>Playlist name is automatically set to <code>Forced Exposure Bestsellers</code> and the description is set to <code>As of YYYY-MM-DD</code>, where date is the day the data was gathered</li>
+<li>Forced Exposure doesn't offer any alternate timespans and it's not clear how often the list is updated</li>
+</ul>
+<p><em>(Code to handle this is conceptually the same as the above Boomkat list handler with modifications to handle the differing page structure)</em></p>
+<h5 id="options-5-6-browse-and-select-from-wfmu-s-heavy-play-archive">Options 5 &amp; 6: Browse and Select from WFMU's "Heavy Play" Archive</h5>
+<ul>
+<li>Browse the <a href="https://www.wfmu.org/Playlists/Wfmu/">WFMU "Heavy Play" archive</a> by date</li>
+<li>Provide a year and receive a list of dated lists to select as an input source
+<ul>
+<li>Current Limitations:
+<ul>
+<li>1987-1996 lists are only available as PDF downloads</li>
+<li>1997 to late 2018 vary in format and structure and have inconsistent support at the moment</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Generates a playlist name <code>WFMU Heavy Play {Month DD, YYYY}</code> and a description <code>{#} albums not found.</code></li>
+<li>Option 6 offers the ability to skip the browsing and provide a list URL directly (date limitations still apply!)</li>
+</ul>
+<p><em>These can be pretty huge (as in a few thousand songs) so they take a little longer to build than other options and the playlists themselves can be a little slow in your Spotify client!</em></p>
+<pre data-lang="Python" style="background-color:#2b303b;color:#c0c5ce;" class="language-Python "><code class="language-Python" data-lang="Python"><span>// options_handlers.py
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_wfmu_latest</span><span>(</span><span style="color:#bf616a;">soup</span><span>):
+</span><span>    
+</span><span>    year = </span><span style="color:#96b5b4;">input</span><span>(&quot;</span><span style="color:#a3be8c;">For what year (2014-present): </span><span>&quot;)
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Select a date: </span><span>&quot;)
+</span><span>    
+</span><span>    </span><span style="color:#65737e;"># List available dates for selected year as YYYY-MM-DD
+</span><span>    </span><span style="color:#b48ead;">for </span><span>a_tag </span><span style="color:#b48ead;">in </span><span>soup.</span><span style="color:#bf616a;">find_all</span><span>(&quot;</span><span style="color:#a3be8c;">a</span><span>&quot;, </span><span style="color:#bf616a;">class_</span><span>=&quot;</span><span style="color:#a3be8c;">playlist</span><span>&quot;):
+</span><span>        href = a_tag.</span><span style="color:#bf616a;">get</span><span>(&quot;</span><span style="color:#a3be8c;">href</span><span>&quot;)
+</span><span>        match = re.</span><span style="color:#bf616a;">search</span><span>(</span><span style="color:#b48ead;">r</span><span>&quot;</span><span style="color:#a3be8c;">/(</span><span style="color:#d08770;">\d</span><span>{4}</span><span style="color:#a3be8c;">)/</span><span>&quot;, href)
+</span><span>        </span><span style="color:#b48ead;">if </span><span>match:
+</span><span>            url_year = match.</span><span style="color:#bf616a;">group</span><span>(</span><span style="color:#d08770;">1</span><span>)
+</span><span>            </span><span style="color:#b48ead;">if </span><span>url_year == year:
+</span><span>                date_match = re.</span><span style="color:#bf616a;">search</span><span>(</span><span style="color:#b48ead;">r</span><span>&quot;</span><span style="color:#a3be8c;">(</span><span style="color:#d08770;">\d</span><span>{4}</span><span style="color:#a3be8c;">-</span><span style="color:#d08770;">\d</span><span>{2}</span><span style="color:#a3be8c;">-</span><span style="color:#d08770;">\d</span><span>{2}</span><span style="color:#a3be8c;">)</span><span style="color:#96b5b4;">\.</span><span style="color:#a3be8c;">html</span><span>&quot;, href)
+</span><span>                </span><span style="color:#b48ead;">if </span><span>date_match:
+</span><span>                    date = date_match.</span><span style="color:#bf616a;">group</span><span>(</span><span style="color:#d08770;">1</span><span>)
+</span><span>                    </span><span style="color:#96b5b4;">print</span><span>(date)
+</span><span>    date = </span><span style="color:#96b5b4;">input</span><span>(&quot;</span><span style="color:#a3be8c;">Enter selection as YYYY-MM-DD: </span><span>&quot;)
+</span><span>    sub_url = &quot;</span><span style="color:#a3be8c;">http://blogfiles.wfmu.org/BT/Airplay_Lists/</span><span>&quot; + year + &quot;</span><span style="color:#a3be8c;">/</span><span>&quot; + date + &quot;</span><span style="color:#a3be8c;">.html</span><span>&quot;
+</span><span>    </span><span style="color:#b48ead;">return </span><span style="color:#bf616a;">handle_wfmu_list</span><span>(</span><span style="color:#bf616a;">get_soup</span><span>(sub_url))
+</span><span>    
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_wfmu_list</span><span>(</span><span style="color:#bf616a;">soup</span><span>):
+</span><span>    date = soup.title.text[</span><span style="color:#d08770;">28</span><span>:]
+</span><span>    </span><span style="color:#96b5b4;">print</span><span>(date)
+</span><span>    playlist_name = &quot;</span><span style="color:#a3be8c;">WFMU Heavy Play </span><span>&quot; + date
+</span><span>    playlist_description = &quot;&quot;
+</span><span>    </span><span style="color:#b48ead;">for </span><span>ul </span><span style="color:#b48ead;">in </span><span>soup.</span><span style="color:#bf616a;">find_all</span><span>(&#39;</span><span style="color:#a3be8c;">ul</span><span>&#39;):
+</span><span>        </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">any</span><span>(li.</span><span style="color:#bf616a;">find</span><span>(&#39;</span><span style="color:#a3be8c;">strong</span><span>&#39;) </span><span style="color:#b48ead;">for </span><span>li </span><span style="color:#b48ead;">in </span><span>ul.</span><span style="color:#bf616a;">find_all</span><span>(&#39;</span><span style="color:#a3be8c;">li</span><span>&#39;)):
+</span><span>            </span><span style="color:#b48ead;">for </span><span>li </span><span style="color:#b48ead;">in </span><span>ul.</span><span style="color:#bf616a;">find_all</span><span>(&#39;</span><span style="color:#a3be8c;">li</span><span>&#39;):
+</span><span>                match = re.</span><span style="color:#bf616a;">match</span><span>(</span><span style="color:#b48ead;">r</span><span>&#39;</span><span style="color:#b48ead;">^</span><span style="color:#a3be8c;">(</span><span style="color:#d08770;">.</span><span>*?</span><span style="color:#a3be8c;">) - (</span><span style="color:#d08770;">.</span><span>*?</span><span style="color:#a3be8c;">) </span><span style="color:#96b5b4;">\(</span><span style="color:#a3be8c;">(</span><span style="color:#d08770;">.</span><span>*?</span><span style="color:#a3be8c;">)</span><span style="color:#96b5b4;">\)</span><span style="color:#b48ead;">$</span><span>&#39;, li.text)
+</span><span>                </span><span style="color:#b48ead;">if </span><span>match:
+</span><span>                    artist_name, album_title, record_label = match.</span><span style="color:#bf616a;">groups</span><span>()
+</span><span>                    input_list.</span><span style="color:#bf616a;">append</span><span>((artist_name.</span><span style="color:#bf616a;">title</span><span>(), album_title))
+</span><span>    </span><span style="color:#b48ead;">return </span><span>playlist_name, playlist_description, input_list
+</span></code></pre>
+<h5 id="options-7-8-browse-and-select-from-recent-nts-radio-broadcasts">Options 7 &amp; 8: Browse and Select from Recent NTS Radio Broadcasts</h5>
+<ul>
+<li>Differs from the standard options in that this is a track-based playlist builder</li>
+<li>Browse the latest from <a href="https://www.nts.live/">NTS Radio</a></li>
+<li>Returns the 12 most recent <a href="https://www.nts.live/latest">broadcasts</a>, including date, name of the program, broadcast location, and any tags</li>
+<li>Generates a playlist name <code>NTS: {broadcast title} ({dd.mm.yy})</code> and description <code>{#} tracks not found.{original episode description}. Broadcast: {YYYY-MM-DD}, {location}</code></li>
+<li>Number of episodes returned can be modified by changing the value of <code>limit=12</code> at the beginning of the <code>handle_nts_latest</code> function.</li>
+<li>Option 8 offers the option to skip the browsing and provide an episode URL directly</li>
+</ul>
+<p><em>(Code to handle this is conceptually the same as the above WFMU list handler with modifications to handle the differing page structures)</em></p>
+<h2 id="how-to-get-spotify-api-credentials">How to Get Spotify API Credentials</h2>
+<p>To get the necessary info for your <code>.env</code> file you'll first need a (free) <a href="https://developer.spotify.com/">Spotify Developer</a> account.</p>
+<ol>
+<li>
+<p>After logging in and landing on the dev dashboard click <em>Create app</em>.</p>
+<img src="https://github.com/jsspen/listeners-friend/blob/main/imgs/createapp.JPG?raw=true" width="450" alt="Screenshot of the Create app screen from the Spotify Developer website">
+</li>
+<li>
+<p>Fill out the required fields:</p>
+<ul>
+<li>Give your app a name (i.e. <em>Text-to-Playlist App</em>) and a brief description, maybe something to remind you why you made it.</li>
+<li>For the Redirect URI you can supply your own or just use https://example.org/callback. Click <em>Add</em>.</li>
+<li>Check the box for <em>Web API</em> access and save.</li>
+</ul>
+</li>
+<li>
+<p>After creating the app you'll be taken to its dashboard. Click <em>Settings</em> in the top right corner. Everything you need for your <code>.env</code> file is here on this page:</p>
+<img src="https://github.com/jsspen/listeners-friend/blob/main/imgs/appsettings.JPG?raw=true" width="450" alt="Screenshot of the app settings screen from the Spotify Developer website">
+</li>
+<li>
+<p>Copy the <em>Client ID</em> and <em>Client Secret</em> (click <em>View client secret</em>) to your <code>.env</code> file. If you forgot what Redirect URI you chose earlier you can also grab that from here. The <code>example.env</code> is prepopulated with <code>https://example.org/callback</code>.</p>
+</li>
+<li>
+<p>You're ready to start building playlists!</p>
+</li>
+</ol>
+
+
+  </div>
+  
+  <div class="section bottom-menu">
+    <hr />
+    <p>
+      
+        
+          <a href="&#x2F;projects">projects</a>
+          &#183;
+        
+          <a href="&#x2F;about">about</a>
+          &#183;
+        
+          <a href="&#x2F;cv">cv</a>
+          &#183;
+        
+      
+      <a href="https:&#x2F;&#x2F;jordan-spencer.com">home</a>
+    </p>
+  </div>
+ 
+  
+
+</div>
+
+  </body>
+</html>

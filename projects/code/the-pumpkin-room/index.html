@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="stylesheet" href="https://jordan-spencer.com/fonts.css" />
+    <link rel="stylesheet" href="https://jordan-spencer.com/style.css" />
+    <title>
+      
+    the pumpkin room - Jordan Spencer | Software Dev
+
+    </title>
+    
+  </head>
+  <body>
+    
+<div class="wrap">
+  <div class="section" id="title"></div>
+  <div class="section" id="sections">
+    
+  </div>
+  <div class="section" id="content">
+    
+    
+        
+    
+    <h2 id="the-pumpkin-room">The Pumpkin Room</h2>
+<p><a href="https://github.com/jsspen/the-pumpkin-room/">GitHub Repo</a></p>
+<p><strong>Ingredients</strong>: TypeScript, Angular, SASS, Tailwind, Node.js, PostgreSQL, RESTful API, Mermaid.js</p>
+<p><em><em>Why?</em></em> I wanted to build something complex and full stack but I also wanted to make something out of the ordinary! I've always enjoyed writing, I have twin daughters who love reading and Halloween, it was October when I began, and it seemed like a fun challenge to test my skills. Like any good game it has multi-user support, the ability to save and load progress, persistent data through multiple play-throughs for achivement tracking, and unpredictable path generation!</p>
+<p><em>Details on why I chose the various technologies I chose along with snippets of relevant code can be found below. This is a fullstack app so there's a lot more code to see, plus this is all under active development, so head to the repo to dig in and see the latest!</em></p>
+<hr />
+<div align="center">
+<img src="https://github.com/jsspen/the-pumpkin-room/blob/main/thepumpkinroom-fe/public/imgs/01.jpg?raw=true" alt="A dark photo of a house in the woods" width="350"/>
+<p><em>You wake up standing at the door of a strange house deep in the woods...</em><br/></p>
+<p><strong>The Pumpkin Room</strong> is a spooky, text-based &amp; story-driven game that I wrote for my daughters.</p>
+</div>
+<h2 id="pumpkin-guts">Pumpkin Guts</h2>
+<h3 id="game-logic-typescript">Game Logic: TypeScript</h3>
+<p>TypeScript handles the core logic of the game, tracking the player's choices, branching the story, and managing game states. I chose TypeScript to make the codebase more scalable and easier to debug, especially as the game inevitably grows in complexity.</p>
+<pre data-lang="TypeScript" style="background-color:#2b303b;color:#c0c5ce;" class="language-TypeScript "><code class="language-TypeScript" data-lang="TypeScript"><span style="color:#65737e;">// thepumpkinroom-fe/src/app/app.component.ts
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">Component</span><span>, </span><span style="color:#bf616a;">OnInit </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">@angular/core</span><span>&#39;;
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">RouterOutlet </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">@angular/router</span><span>&#39;;
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">CommonModule </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">@angular/common</span><span>&#39;;
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">FormsModule </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">@angular/forms</span><span>&#39;;
+</span><span>
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">StoryService </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">./story.service</span><span>&#39;;
+</span><span>
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">Choice </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">./models/choice.model</span><span>&#39;;
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">StoryPart </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">./models/story-part.model</span><span>&#39;;
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">Question </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">./models/question.model</span><span>&#39;;
+</span><span style="color:#b48ead;">import </span><span>{ </span><span style="color:#bf616a;">Profile </span><span>} </span><span style="color:#b48ead;">from </span><span>&#39;</span><span style="color:#a3be8c;">./models/profile.model</span><span>&#39;;
+</span><span>
+</span><span>@</span><span style="color:#8fa1b3;">Component</span><span>({
+</span><span>  selector: &#39;</span><span style="color:#a3be8c;">app-root</span><span>&#39;,
+</span><span>  standalone: </span><span style="color:#d08770;">true</span><span>,
+</span><span>  imports: [</span><span style="color:#bf616a;">RouterOutlet</span><span>, </span><span style="color:#bf616a;">CommonModule</span><span>, </span><span style="color:#bf616a;">FormsModule</span><span>],
+</span><span>  templateUrl: &#39;</span><span style="color:#a3be8c;">./app.component.html</span><span>&#39;,
+</span><span>  styleUrls: [&#39;</span><span style="color:#a3be8c;">./app.component.scss</span><span>&#39;],
+</span><span>})
+</span><span style="color:#b48ead;">export class </span><span style="color:#ebcb8b;">AppComponent </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">title </span><span>= &#39;</span><span style="color:#a3be8c;">The Pumpkin Room</span><span>&#39;</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">hasSelectedGame </span><span>= </span><span style="color:#d08770;">false</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">showNewGameForm </span><span>= </span><span style="color:#d08770;">false</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">hasStartedGame </span><span>= </span><span style="color:#d08770;">false</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">errorMessage</span><span>: </span><span style="color:#eff1f5;">string </span><span>| </span><span style="color:#eff1f5;">null </span><span>= </span><span style="color:#d08770;">null</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">content</span><span>: </span><span style="color:#eff1f5;">StoryPart </span><span>| </span><span style="color:#eff1f5;">null </span><span>= </span><span style="color:#d08770;">null</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">questions</span><span>: </span><span style="color:#eff1f5;">Question[] </span><span>= </span><span style="color:#eff1f5;">[];
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">question</span><span>: </span><span style="color:#eff1f5;">Question </span><span>| </span><span style="color:#eff1f5;">null </span><span>= </span><span style="color:#d08770;">null</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">choices</span><span>: </span><span style="color:#eff1f5;">Choice[] </span><span>= </span><span style="color:#eff1f5;">[];
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">userName</span><span>: </span><span style="color:#eff1f5;">string </span><span>= &#39;&#39;</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">storyText</span><span>: </span><span style="color:#eff1f5;">string </span><span>= &#39;&#39;</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  </span><span style="color:#bf616a;">profile</span><span>: </span><span style="color:#eff1f5;">Profile </span><span>| </span><span style="color:#eff1f5;">null </span><span>= </span><span style="color:#d08770;">null</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#b48ead;">constructor</span><span>(</span><span style="color:#b48ead;">private </span><span style="color:#bf616a;">storyService</span><span>: </span><span style="color:#eff1f5;">StoryService</span><span>) </span><span style="color:#eff1f5;">{}
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">fetchStoryPart</span><span>(</span><span style="color:#bf616a;">id</span><span>: </span><span style="color:#eff1f5;">number</span><span>) </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">storyService</span><span style="color:#eff1f5;">.</span><span style="color:#8fa1b3;">getStoryPart</span><span style="color:#eff1f5;">(</span><span style="color:#bf616a;">id</span><span style="color:#eff1f5;">).</span><span style="color:#8fa1b3;">subscribe</span><span style="color:#eff1f5;">(
+</span><span style="color:#eff1f5;">      </span><span>(</span><span style="color:#bf616a;">response</span><span>: </span><span style="color:#eff1f5;">StoryPart</span><span>) </span><span style="color:#b48ead;">=&gt; </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">        </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.content </span><span>= </span><span style="color:#bf616a;">response</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">        </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">storyText </span><span>= </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.content?.text;
+</span><span style="color:#eff1f5;">        </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">questions </span><span>= </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.content?.</span><span style="color:#bf616a;">questions</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">        </span><span style="color:#b48ead;">if </span><span style="color:#eff1f5;">(</span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">questions</span><span style="color:#eff1f5;">?.length </span><span>&gt; </span><span style="color:#d08770;">0</span><span style="color:#eff1f5;">) {
+</span><span style="color:#eff1f5;">          </span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">randomIndex </span><span>= </span><span style="color:#eff1f5;">Math.</span><span style="color:#96b5b4;">floor</span><span style="color:#eff1f5;">(Math.</span><span style="color:#96b5b4;">random</span><span style="color:#eff1f5;">() </span><span>* </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">questions</span><span style="color:#eff1f5;">.length);
+</span><span style="color:#eff1f5;">          </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">question </span><span>= </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">questions</span><span style="color:#eff1f5;">[</span><span style="color:#bf616a;">randomIndex</span><span style="color:#eff1f5;">];
+</span><span style="color:#eff1f5;">        }
+</span><span style="color:#eff1f5;">      },
+</span><span style="color:#eff1f5;">      </span><span>(</span><span style="color:#bf616a;">error</span><span>) </span><span style="color:#b48ead;">=&gt; </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">        </span><span style="color:#ebcb8b;">console</span><span style="color:#eff1f5;">.</span><span style="color:#96b5b4;">error</span><span style="color:#eff1f5;">(</span><span>&#39;</span><span style="color:#a3be8c;">Error fetching StoryPart</span><span>&#39;</span><span style="color:#eff1f5;">, </span><span style="color:#bf616a;">error</span><span style="color:#eff1f5;">);
+</span><span style="color:#eff1f5;">      }
+</span><span style="color:#eff1f5;">    );
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">makeChoice</span><span>(</span><span style="color:#bf616a;">choice</span><span>: </span><span style="color:#eff1f5;">Choice</span><span>) </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#8fa1b3;">fetchStoryPart</span><span style="color:#eff1f5;">(</span><span style="color:#bf616a;">choice</span><span style="color:#eff1f5;">?.</span><span style="color:#bf616a;">nextStoryPartId</span><span style="color:#eff1f5;">);
+</span><span style="color:#eff1f5;">    </span><span style="color:#65737e;">// this.profile = this.storyService.getProfile();
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">newGame</span><span>() </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">hasSelectedGame </span><span>= </span><span style="color:#d08770;">true</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">showNewGameForm </span><span>= </span><span style="color:#d08770;">true</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">newPlayer</span><span>(</span><span style="color:#bf616a;">userName</span><span>: </span><span style="color:#eff1f5;">string</span><span>) </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">storyService</span><span style="color:#eff1f5;">.</span><span style="color:#8fa1b3;">createNewPlayer</span><span style="color:#eff1f5;">(</span><span style="color:#bf616a;">userName</span><span style="color:#eff1f5;">).</span><span style="color:#8fa1b3;">subscribe</span><span style="color:#eff1f5;">(</span><span>(</span><span style="color:#bf616a;">response</span><span>) </span><span style="color:#b48ead;">=&gt; </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">      </span><span style="color:#ebcb8b;">console</span><span style="color:#eff1f5;">.</span><span style="color:#96b5b4;">log</span><span style="color:#eff1f5;">(</span><span>&#39;</span><span style="color:#a3be8c;">Player created:</span><span>&#39;</span><span style="color:#eff1f5;">, </span><span style="color:#bf616a;">response</span><span style="color:#eff1f5;">);
+</span><span style="color:#eff1f5;">    });
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">submitNewGame</span><span>() </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">    </span><span style="color:#b48ead;">if </span><span style="color:#eff1f5;">(</span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">userName</span><span style="color:#eff1f5;">) {
+</span><span style="color:#eff1f5;">      </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">storyService</span><span style="color:#eff1f5;">.</span><span style="color:#8fa1b3;">createNewPlayer</span><span style="color:#eff1f5;">(</span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">userName</span><span style="color:#eff1f5;">).</span><span style="color:#8fa1b3;">subscribe</span><span style="color:#eff1f5;">(
+</span><span style="color:#eff1f5;">        </span><span>(</span><span style="color:#bf616a;">response</span><span>) </span><span style="color:#b48ead;">=&gt; </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">          </span><span style="color:#ebcb8b;">console</span><span style="color:#eff1f5;">.</span><span style="color:#96b5b4;">log</span><span style="color:#eff1f5;">(</span><span>&#39;</span><span style="color:#a3be8c;">Player created:</span><span>&#39;</span><span style="color:#eff1f5;">, </span><span style="color:#bf616a;">response</span><span style="color:#eff1f5;">);
+</span><span style="color:#eff1f5;">          </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">errorMessage </span><span>= </span><span style="color:#d08770;">null</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">          </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">hasStartedGame </span><span>= </span><span style="color:#d08770;">true</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">          </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#8fa1b3;">fetchStoryPart</span><span style="color:#eff1f5;">(</span><span style="color:#d08770;">1</span><span style="color:#eff1f5;">);
+</span><span style="color:#eff1f5;">          </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">showNewGameForm </span><span>= </span><span style="color:#d08770;">false</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">        },
+</span><span style="color:#eff1f5;">        </span><span>(</span><span style="color:#bf616a;">error</span><span>) </span><span style="color:#b48ead;">=&gt; </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">          </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">errorMessage </span><span>= </span><span style="color:#bf616a;">error</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">error
+</span><span style="color:#eff1f5;">            </span><span>? </span><span style="color:#bf616a;">error</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">error</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">error
+</span><span style="color:#eff1f5;">            </span><span>: &#39;</span><span style="color:#a3be8c;">An error occurred</span><span>&#39;</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">        }
+</span><span style="color:#eff1f5;">      );
+</span><span style="color:#eff1f5;">    } </span><span style="color:#b48ead;">else </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">      </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">errorMessage </span><span>= &#39;</span><span style="color:#a3be8c;">Please enter a valid username</span><span>&#39;</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">    }
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">loadGame</span><span>() </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">hasSelectedGame </span><span>= </span><span style="color:#d08770;">true</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">showNewGameForm </span><span>= </span><span style="color:#d08770;">true</span><span style="color:#eff1f5;">;
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">
+</span><span style="color:#eff1f5;">  </span><span style="color:#8fa1b3;">resetGame</span><span>() </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">storyService</span><span style="color:#eff1f5;">.</span><span style="color:#8fa1b3;">resetGame</span><span style="color:#eff1f5;">(</span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#bf616a;">userName</span><span style="color:#eff1f5;">).</span><span style="color:#8fa1b3;">subscribe</span><span style="color:#eff1f5;">(</span><span>(</span><span style="color:#bf616a;">response</span><span>) </span><span style="color:#b48ead;">=&gt; </span><span style="color:#eff1f5;">{
+</span><span style="color:#eff1f5;">      </span><span style="color:#ebcb8b;">console</span><span style="color:#eff1f5;">.</span><span style="color:#96b5b4;">log</span><span style="color:#eff1f5;">(</span><span>&#39;</span><span style="color:#a3be8c;">Game Reset</span><span>&#39;</span><span style="color:#eff1f5;">, </span><span style="color:#bf616a;">response</span><span style="color:#eff1f5;">);
+</span><span style="color:#eff1f5;">    });
+</span><span style="color:#eff1f5;">    </span><span style="color:#bf616a;">this</span><span style="color:#eff1f5;">.</span><span style="color:#8fa1b3;">fetchStoryPart</span><span style="color:#eff1f5;">(</span><span style="color:#d08770;">1</span><span style="color:#eff1f5;">);
+</span><span style="color:#eff1f5;">  }
+</span><span style="color:#eff1f5;">}
+</span></code></pre>
+<h3 id="ui-angular-tailwind">UI: Angular, Tailwind</h3>
+<p>Angular provides the modular, component-based architecture for the user interface. I chose Angular for its two-way data binding, which makes it easy to update the game state and reflect changes in the UI. I used Tailwind for easy to manage, flexible, and consistent styling.</p>
+<pre data-lang="HTML" style="background-color:#2b303b;color:#c0c5ce;" class="language-HTML "><code class="language-HTML" data-lang="HTML"><span style="color:#65737e;">&lt;!-- thepumpkinroom-fe/src/app/app.component.html --&gt;
+</span><span>&lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">p-6 text-white</span><span>&quot;&gt;
+</span><span>  &lt;</span><span style="color:#bf616a;">h1 </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">p-6 text-4xl font-bold underline font-underdog</span><span>&quot;&gt;{{ title }}&lt;/</span><span style="color:#bf616a;">h1</span><span>&gt;
+</span><span>
+</span><span>  </span><span style="color:#65737e;">&lt;!-- landing page --&gt;
+</span><span>  &lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">*ngIf</span><span>=&quot;</span><span style="color:#a3be8c;">!hasSelectedGame</span><span>&quot;&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">button </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">hover:font-semibold hover:underline</span><span>&quot; </span><span style="color:#d08770;">(click)</span><span>=&quot;</span><span style="color:#a3be8c;">newGame()</span><span>&quot;&gt;
+</span><span>      Begin
+</span><span>    &lt;/</span><span style="color:#bf616a;">button</span><span>&gt;
+</span><span>    |
+</span><span>    &lt;</span><span style="color:#bf616a;">button </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">hover:font-semibold hover:underline</span><span>&quot; </span><span style="color:#d08770;">(click)</span><span>=&quot;</span><span style="color:#a3be8c;">loadGame()</span><span>&quot;&gt;
+</span><span>      Load
+</span><span>    &lt;/</span><span style="color:#bf616a;">button</span><span>&gt;
+</span><span>  &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>
+</span><span>  </span><span style="color:#65737e;">&lt;!-- New game form for username input --&gt;
+</span><span>  &lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">*ngIf</span><span>=&quot;</span><span style="color:#a3be8c;">showNewGameForm</span><span>&quot;&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">label </span><span style="color:#d08770;">for</span><span>=&quot;</span><span style="color:#a3be8c;">name-input</span><span>&quot; </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">font-underdog italic</span><span>&quot;
+</span><span>      &gt;What is your name?&lt;/</span><span style="color:#bf616a;">label
+</span><span>    &gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">br </span><span>/&gt;&lt;</span><span style="color:#bf616a;">br </span><span>/&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">input
+</span><span>      </span><span style="color:#8fa1b3;">id</span><span>=&quot;</span><span style="color:#a3be8c;">name-input</span><span>&quot;
+</span><span>      </span><span style="color:#d08770;">type</span><span>=&quot;</span><span style="color:#a3be8c;">text</span><span>&quot;
+</span><span>      </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">p-4 border border-grey-300 rounded-lg bg-grey-50 text-base</span><span>&quot;
+</span><span>      </span><span style="color:#d08770;">[(ngModel)]</span><span>=&quot;</span><span style="color:#a3be8c;">userName</span><span>&quot;
+</span><span>    /&gt;&lt;</span><span style="color:#bf616a;">br </span><span>/&gt;&lt;</span><span style="color:#bf616a;">br </span><span>/&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">button
+</span><span>      </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">hover:font-semibold hover:underline font-underdog</span><span>&quot;
+</span><span>      </span><span style="color:#d08770;">(click)</span><span>=&quot;</span><span style="color:#a3be8c;">submitNewGame()</span><span>&quot;
+</span><span>    &gt;
+</span><span>      Submit
+</span><span>    &lt;/</span><span style="color:#bf616a;">button</span><span>&gt;
+</span><span>  &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>
+</span><span>  </span><span style="color:#65737e;">&lt;!-- Error message if username is taken --&gt;
+</span><span>  &lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">*ngIf</span><span>=&quot;</span><span style="color:#a3be8c;">errorMessage</span><span>&quot;&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">p</span><span>&gt;{{ errorMessage }}&lt;/</span><span style="color:#bf616a;">p</span><span>&gt;
+</span><span>  &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>
+</span><span>  &lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">*ngIf</span><span>=&quot;</span><span style="color:#a3be8c;">hasStartedGame</span><span>&quot;&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">p </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">p-12</span><span>&quot;&gt;{{ storyText }}&lt;/</span><span style="color:#bf616a;">p</span><span>&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">p </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">font-underdog text-xl</span><span>&quot;&gt;
+</span><span>      &lt;</span><span style="color:#bf616a;">i</span><span>&gt;{{ question?.text }}&lt;/</span><span style="color:#bf616a;">i</span><span>&gt;
+</span><span>    &lt;/</span><span style="color:#bf616a;">p</span><span>&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">*ngIf</span><span>=&quot;</span><span style="color:#a3be8c;">(questions[0].choices || []).length &gt; 0</span><span>&quot;&gt;
+</span><span>      &lt;</span><span style="color:#bf616a;">br </span><span>/&gt;&lt;</span><span style="color:#bf616a;">br </span><span>/&gt;
+</span><span>
+</span><span>      &lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">flex flex-wrap justify-center items-center space-x-2</span><span>&quot;&gt;
+</span><span>        &lt;</span><span style="color:#bf616a;">ng-container
+</span><span>          </span><span style="color:#d08770;">*ngFor</span><span>=&quot;</span><span style="color:#a3be8c;">let choice of questions[0].choices; last as isLast</span><span>&quot;
+</span><span>        &gt;
+</span><span>          &lt;</span><span style="color:#bf616a;">button
+</span><span>            </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">font-semibold hover:underline font-underdog min-w-max</span><span>&quot;
+</span><span>            </span><span style="color:#d08770;">(click)</span><span>=&quot;</span><span style="color:#a3be8c;">makeChoice(choice)</span><span>&quot;
+</span><span>          &gt;
+</span><span>            {{ choice?.text }}
+</span><span>          &lt;/</span><span style="color:#bf616a;">button</span><span>&gt;
+</span><span>          &lt;</span><span style="color:#bf616a;">span </span><span style="color:#d08770;">*ngIf</span><span>=&quot;</span><span style="color:#a3be8c;">!isLast</span><span>&quot; </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">mx-2</span><span>&quot;&gt;or&lt;/</span><span style="color:#bf616a;">span</span><span>&gt;
+</span><span>        &lt;/</span><span style="color:#bf616a;">ng-container</span><span>&gt;
+</span><span>      &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>
+</span><span>      &lt;</span><span style="color:#bf616a;">br </span><span>/&gt;
+</span><span>      &lt;</span><span style="color:#bf616a;">button
+</span><span>        </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">fixed bottom-0 left-0 right-0 mx-auto text-sm mb-4 p-2 font-medium hover:underline font-underdog italic</span><span>&quot;
+</span><span>        </span><span style="color:#d08770;">(click)</span><span>=&quot;</span><span style="color:#a3be8c;">resetGame()</span><span>&quot;
+</span><span>      &gt;
+</span><span>        Start Over
+</span><span>      &lt;/</span><span style="color:#bf616a;">button</span><span>&gt;
+</span><span>    &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>  &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>&lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span></code></pre>
+<h3 id="backend-node-js-postgresql-restful-api-sequelize">Backend: Node.js, PostgreSQL, RESTful API, Sequelize</h3>
+<p>Story text, questions, and possible options are stored across three tables in a PostgreSQL database to increase flexibility and modularity. Data is fetched from the API using Sequelize. A fourth table stores player profiles which include username, game profile, and history. The player history persists across story resets, allowing you to see how many of the potential decisions you have faced in the game. Replay and take new paths to uncover all the possibilities.</p>
+<pre data-lang="JavaScript" style="background-color:#2b303b;color:#c0c5ce;" class="language-JavaScript "><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#65737e;">// thepumpkinroom-be/app.js
+</span><span>
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">express </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">express</span><span>&quot;);
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">bodyParser </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">body-parser</span><span>&quot;);
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">sequelize </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">./config/database</span><span>&quot;);
+</span><span>
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">storyRoutes </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">./routes/storyRoutes</span><span>&quot;);
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">profileRoutes </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">./routes/profileRoutes</span><span>&quot;);
+</span><span>
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">Question </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">./models/Question</span><span>&quot;);
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">StoryPart </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">./models/StoryPart</span><span>&quot;);
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">Choice </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">./models/Choice</span><span>&quot;);
+</span><span>
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">app </span><span>= </span><span style="color:#bf616a;">express</span><span>();
+</span><span style="color:#bf616a;">app</span><span>.</span><span style="color:#bf616a;">use</span><span>(</span><span style="color:#bf616a;">bodyParser</span><span>.</span><span style="color:#bf616a;">json</span><span>());
+</span><span>
+</span><span style="color:#bf616a;">app</span><span>.</span><span style="color:#bf616a;">use</span><span>(&quot;</span><span style="color:#a3be8c;">/api</span><span>&quot;, </span><span style="color:#bf616a;">storyRoutes</span><span>);
+</span><span style="color:#bf616a;">app</span><span>.</span><span style="color:#bf616a;">use</span><span>(&quot;</span><span style="color:#a3be8c;">/api</span><span>&quot;, </span><span style="color:#bf616a;">profileRoutes</span><span>);
+</span><span>
+</span><span style="color:#ebcb8b;">Question</span><span>.</span><span style="color:#bf616a;">belongsTo</span><span>(</span><span style="color:#bf616a;">StoryPart</span><span>, { foreignKey: &quot;</span><span style="color:#a3be8c;">storyPartId</span><span>&quot;, as: &quot;</span><span style="color:#a3be8c;">storyPart</span><span>&quot; });
+</span><span style="color:#ebcb8b;">Question</span><span>.</span><span style="color:#bf616a;">hasMany</span><span>(</span><span style="color:#bf616a;">Choice</span><span>, { as: &quot;</span><span style="color:#a3be8c;">choices</span><span>&quot;, foreignKey: &quot;</span><span style="color:#a3be8c;">questionId</span><span>&quot; });
+</span><span style="color:#ebcb8b;">Choice</span><span>.</span><span style="color:#bf616a;">belongsTo</span><span>(</span><span style="color:#bf616a;">Question</span><span>, { foreignKey: &quot;</span><span style="color:#a3be8c;">questionId</span><span>&quot;, as: &quot;</span><span style="color:#a3be8c;">question</span><span>&quot; });
+</span><span style="color:#ebcb8b;">StoryPart</span><span>.</span><span style="color:#bf616a;">hasMany</span><span>(</span><span style="color:#bf616a;">Question</span><span>, { as: &quot;</span><span style="color:#a3be8c;">questions</span><span>&quot;, foreignKey: &quot;</span><span style="color:#a3be8c;">storyPartId</span><span>&quot; });
+</span><span>
+</span><span style="color:#65737e;">// Sync models with the database
+</span><span style="color:#bf616a;">sequelize</span><span>.</span><span style="color:#bf616a;">sync</span><span>({ alter: </span><span style="color:#d08770;">true </span><span>}).</span><span style="color:#bf616a;">then</span><span>(() </span><span style="color:#b48ead;">=&gt; </span><span>{
+</span><span>  </span><span style="color:#bf616a;">app</span><span>.</span><span style="color:#bf616a;">listen</span><span>(</span><span style="color:#d08770;">3000</span><span>, () </span><span style="color:#b48ead;">=&gt; </span><span>{
+</span><span>    console.</span><span style="color:#96b5b4;">log</span><span>(&quot;</span><span style="color:#a3be8c;">Server running on http://localhost:3000</span><span>&quot;);
+</span><span>  });
+</span><span>});
+</span></code></pre>
+<pre data-lang="JavaScript" style="background-color:#2b303b;color:#c0c5ce;" class="language-JavaScript "><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#65737e;">// thepumpkinroom-be/routes/profileRoutes.js
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">express </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">express</span><span>&quot;);
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">router </span><span>= </span><span style="color:#bf616a;">express</span><span>.</span><span style="color:#bf616a;">Router</span><span>();
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">Profile </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">../models/Profile</span><span>&quot;);
+</span><span>
+</span><span style="color:#65737e;">// creating a new player - POST
+</span><span style="color:#bf616a;">router</span><span>.</span><span style="color:#bf616a;">post</span><span>(&quot;</span><span style="color:#a3be8c;">/profile</span><span>&quot;, </span><span style="color:#b48ead;">async </span><span>(req, res) </span><span style="color:#b48ead;">=&gt; </span><span>{
+</span><span>  </span><span style="color:#b48ead;">try </span><span>{
+</span><span>    </span><span style="color:#b48ead;">const </span><span>{ </span><span style="color:#bf616a;">userName </span><span>} = </span><span style="color:#bf616a;">req</span><span>.body;
+</span><span>    console.</span><span style="color:#96b5b4;">log</span><span>(&quot;</span><span style="color:#a3be8c;">userName:</span><span>&quot;, </span><span style="color:#bf616a;">userName</span><span>);
+</span><span>    </span><span style="color:#65737e;">// check for existing username
+</span><span>    </span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">existingUser </span><span>= </span><span style="color:#b48ead;">await </span><span style="color:#ebcb8b;">Profile</span><span>.</span><span style="color:#bf616a;">findOne</span><span>({ where: { </span><span style="color:#bf616a;">userName </span><span>} });
+</span><span>    </span><span style="color:#b48ead;">if </span><span>(</span><span style="color:#bf616a;">existingUser</span><span>) {
+</span><span>      </span><span style="color:#b48ead;">return </span><span style="color:#bf616a;">res</span><span>.</span><span style="color:#bf616a;">status</span><span>(</span><span style="color:#d08770;">400</span><span>).</span><span style="color:#bf616a;">json</span><span>({ error: &quot;</span><span style="color:#a3be8c;">Username already taken</span><span>&quot; });
+</span><span>      </span><span style="color:#65737e;">// This username already exists. Do you want to load your game?
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">profile </span><span>= </span><span style="color:#b48ead;">await </span><span style="color:#ebcb8b;">Profile</span><span>.</span><span style="color:#bf616a;">create</span><span>({
+</span><span>      </span><span style="color:#bf616a;">userName</span><span>,
+</span><span>    });
+</span><span>    </span><span style="color:#bf616a;">res</span><span>.</span><span style="color:#bf616a;">json</span><span>(</span><span style="color:#bf616a;">profile</span><span>);
+</span><span>  } </span><span style="color:#b48ead;">catch </span><span>(</span><span style="color:#bf616a;">error</span><span>) {
+</span><span>    console.</span><span style="color:#96b5b4;">error</span><span>(&quot;</span><span style="color:#a3be8c;">Error:</span><span>&quot;, </span><span style="color:#bf616a;">error</span><span>);
+</span><span>    </span><span style="color:#bf616a;">res</span><span>.</span><span style="color:#bf616a;">status</span><span>(</span><span style="color:#d08770;">500</span><span>).</span><span style="color:#bf616a;">json</span><span>({ error: &quot;</span><span style="color:#a3be8c;">Internal server error</span><span>&quot; });
+</span><span>  }
+</span><span>});
+</span><span>
+</span><span style="color:#65737e;">// updating &amp; resetting profile - PUT
+</span><span style="color:#65737e;">// updating/saving: currentStoryPartId = this.currentStoryPartId,
+</span><span style="color:#65737e;">//      choicesMade = this.choicesMade, completed = this.completed
+</span><span style="color:#65737e;">// reset: currentStoryPartId = 1, completed = false
+</span><span>
+</span><span>module.exports = </span><span style="color:#bf616a;">router</span><span>;
+</span></code></pre>
+<pre data-lang="Javascript" style="background-color:#2b303b;color:#c0c5ce;" class="language-Javascript "><code class="language-Javascript" data-lang="Javascript"><span style="color:#65737e;">// thepumpkinroom-be/models/Profile.js
+</span><span>
+</span><span style="color:#b48ead;">const </span><span>{ </span><span style="color:#bf616a;">DataTypes </span><span>} = </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">sequelize</span><span>&quot;);
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">sequelize </span><span>= </span><span style="color:#96b5b4;">require</span><span>(&quot;</span><span style="color:#a3be8c;">../config/database</span><span>&quot;);
+</span><span>
+</span><span style="color:#b48ead;">const </span><span style="color:#bf616a;">Profile </span><span>= </span><span style="color:#bf616a;">sequelize</span><span>.</span><span style="color:#bf616a;">define</span><span>(
+</span><span>  &quot;</span><span style="color:#a3be8c;">Profile</span><span>&quot;,
+</span><span>  {
+</span><span>    userName: {
+</span><span>      type: </span><span style="color:#ebcb8b;">DataTypes</span><span>.TEXT,
+</span><span>      allowNull: </span><span style="color:#d08770;">false</span><span>,
+</span><span>      unique: </span><span style="color:#d08770;">true</span><span>,
+</span><span>    },
+</span><span>    currentStoryPartId: {
+</span><span>      type: </span><span style="color:#ebcb8b;">DataTypes</span><span>.INTEGER,
+</span><span>      defaultValue: </span><span style="color:#d08770;">1</span><span>,
+</span><span>      allowNull: </span><span style="color:#d08770;">false</span><span>,
+</span><span>    },
+</span><span>    choicesMade: {
+</span><span>      type: </span><span style="color:#ebcb8b;">DataTypes</span><span>.</span><span style="color:#bf616a;">ARRAY</span><span>(</span><span style="color:#ebcb8b;">DataTypes</span><span>.INTEGER),
+</span><span>      defaultValue: [],
+</span><span>      allowNull: </span><span style="color:#d08770;">false</span><span>,
+</span><span>    },
+</span><span>    completed: {
+</span><span>      type: </span><span style="color:#ebcb8b;">DataTypes</span><span>.BOOLEAN,
+</span><span>      defaultValue: </span><span style="color:#d08770;">false</span><span>,
+</span><span>    },
+</span><span>  },
+</span><span>  {
+</span><span>    timestamps: </span><span style="color:#d08770;">false</span><span>,
+</span><span>  }
+</span><span>);
+</span><span>
+</span><span>module.exports = </span><span style="color:#bf616a;">Profile</span><span>;
+</span></code></pre>
+<h3 id="the-story">The Story</h3>
+<p>I wrote all of the text in the game, no LLMs involved, and I retain all rights to it. To keep from going crosseyed while creating all the branching and looping pieces of the game I used a plain old spreadsheet and a flowchart "map" written in <strong>Mermaid.js</strong>. The mermaid chart can be found in the backend directory.</p>
+
+
+  </div>
+  
+  <div class="section bottom-menu">
+    <hr />
+    <p>
+      
+        
+          <a href="&#x2F;projects">projects</a>
+          &#183;
+        
+          <a href="&#x2F;about">about</a>
+          &#183;
+        
+          <a href="&#x2F;cv">cv</a>
+          &#183;
+        
+      
+      <a href="https:&#x2F;&#x2F;jordan-spencer.com">home</a>
+    </p>
+  </div>
+ 
+  
+
+</div>
+
+  </body>
+</html>
